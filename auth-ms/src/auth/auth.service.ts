@@ -10,7 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 import * as dotenv from 'dotenv';
 import { PrismaService } from '../prisma/prisma.Service';
 import * as bcrypt from 'bcryptjs';
-import { isBefore, addDays } from 'date-fns';
+import { isBefore, addHours  } from 'date-fns';
 import { MailerService } from '../mailer/mailer.service';
 dotenv.config();
 
@@ -175,7 +175,7 @@ export class AuthService {
 
     // 1. GENERAR TOKEN y FECHA DE EXPIRACIÓN
     const resetToken = uuidv4() + '-' + uuidv4();
-    const expiresAt = addDays(new Date(), this.resetTokenExpiresHours / 24); // Añadir horas/días
+    const expiresAt = addHours(new Date(), this.resetTokenExpiresHours); // Añadir horas/días
 
     // 2. GUARDAR EN PRISMA
     await this.prisma.passwordResetToken.deleteMany({

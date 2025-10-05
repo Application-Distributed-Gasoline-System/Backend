@@ -1,1 +1,2 @@
 export const DRIVERS_PACKAGE = 'DRIVERS_PACKAGE'
+export const AUTH_PACKAGE = 'AUTH_PACKAGE'
