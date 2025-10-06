@@ -3,6 +3,7 @@ import { DriversService } from './drivers.service';
 import { GrpcMethod } from '@nestjs/microservices';
 import { CreateDriverDto } from './dto/create-driver.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
+import { PaginationDto } from 'src/common';
 
 
 @Controller()
@@ -11,9 +12,14 @@ export class DriversController {
 
   // Obtener todos los conductores
   @GrpcMethod('DriversService', 'GetAllDrivers')
-  async getAllDrivers() {
-    const drivers = await this.driversService.getAllDrivers();
-    return { drivers };
+  async getAllDrivers(data: PaginationDto) {
+    const response = await this.driversService.getAllDrivers(data);
+    return {
+      drivers: response.data,
+      total: response.total,
+      page: response.page,
+      totalPages: response.totalPages
+    };
   }
 
   // Obtener conductor por ID

@@ -3,14 +3,19 @@ syntax = "proto3";
 package drivers;
 
 service DriversService {
-  rpc GetAllDrivers (Empty) returns (DriversResponse);
+  rpc GetAllDrivers (GetAllDriversRequest) returns (DriversResponse);
   rpc GetDriverById (DriverByIdRequest) returns (DriverResponse);
   rpc CreateDriver (CreateDriverRequest) returns (DriverResponse);
   rpc UpdateDriver (UpdateDriverRequest) returns (DriverResponse);
   rpc DeleteDriver (DriverByIdRequest) returns (DriverResponse);
 }
 
-message Empty {}
+// ======== Requests ========
+
+message GetAllDriversRequest {
+  int32 page = 1;
+  int32 limit = 2;
+}
 
 message DriverByIdRequest {
   string id = 1;
@@ -34,6 +39,15 @@ message DriverResponse {
   string message = 4;
 }
 
+// ======== Responses ========
+
 message DriversResponse {
   repeated DriverResponse drivers = 1;
+}
+
+message GetAllDriversResponse {
+  repeated DriverResponse drivers = 1;  
+  int32 total = 2;                      
+  int32 page = 3;                       
+  int32 totalPages = 4;                 
 }

@@ -1,34 +1,72 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { CreateDriverDto } from './dto/create-driver.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
+import { NatsClient } from 'src/nats-client.provider';
+import { PaginationDto } from 'src/common';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class DriversService extends PrismaClient implements OnModuleInit {
   private readonly logger = new Logger('DriversService');
+
+  constructor(/*private readonly natsClient: NatsClient*/){
+    super()
+  }
 
   async onModuleInit() {
     await this.$connect();
     this.logger.log('La base de datos esta conectada');
   }
 
-  async getAllDrivers() {
-    return this.driver.findMany(); // Prisma ya sabe que devuelve Driver[]
+  async getAllDrivers(paginationDto: PaginationDto) {
+
+    const { page, limit } = paginationDto
+    
+    const skip = (page - 1) * limit
+
+    const [data, total] = await Promise.all([
+      this.driver.findMany({
+        skip,
+        take: limit,
+        //orderBy: { createdAt: 'desc'},
+      }),
+      this.driver.count(),
+    ])
+
+    return {
+      data, total, page, totalPages: Math.ceil(total/limit)
+    }
+    
   }
 
   async getDriverById(id: string) {
-    return this.driver.findUnique({ where: { id } });
+    const driver = this.driver.findUnique({ where: { id } });
+    
+    if ( !driver) throw new RpcException({
+      message: `Driver with id: ${ id } not found`,
+      status: HttpStatus.BAD_REQUEST
+    });
+
+    return driver;
+    
   }
 
   async createDriver(data: CreateDriverDto) {
-    return this.driver.create({ data });
+    const driver = this.driver.create({ data });
+    //await this.natsClient.emit('driver.created', driver); // <--- evento NATS de crear
+    return driver; // Si no ocurre ningun error mientras hace lo que tenga que hacer el microservicio retorna los conductores
   }
 
   async updateDriver(id: string, data: UpdateDriverDto) {
-    return this.driver.update({ where: { id }, data });
+    const driver = this.driver.update({ where: { id }, data });
+    //await this.natsClient.emit('driver.update', driver); // <--- evento NATS de actualizar
+    return driver; // Si no ocurre ningun error mientras hace lo que tenga que hacer el microservicio retorna los conductores
   }
 
   async deleteDriver(id: string) {
-    return this.driver.delete({ where: { id } });
+    const driver = this.driver.delete({ where: { id } });
+    //await this.natsClient.emit('driver.delete', driver); // <--- evento NATS de actualizar
+    return driver; // Si no ocurre ningun error mientras hace lo que tenga que hacer el microservicio retorna los conductores
   }
 }

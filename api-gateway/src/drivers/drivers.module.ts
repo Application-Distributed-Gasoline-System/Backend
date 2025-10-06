@@ -13,7 +13,7 @@ import { DRIVERS_PACKAGE, envs } from 'src/config';
           options: {
             package: 'drivers',
             protoPath: join(__dirname, '../../proto/drivers.proto'), 
-            url: '0.0.0.0:50051',
+            url: `${envs.driversMicroserviceHost}:${envs.driversMicroservicePort}`
           },
        },
     ]),

@@ -4,14 +4,15 @@ import * as joi from 'joi'
 
 interface EnvVars{
     PORT: number
-    DRIVERS_MICROSERVICE_HOST: string
     DRIVERS_MICROSERVICE_PORT: number
+    DRIVERS_MICROSERVICE_HOST: string
 }
 
 const envsSchema = joi.object({
     PORT: joi.number().required(),
+    DRIVERS_MICROSERVICE_PORT: joi.number().required(),
     DRIVERS_MICROSERVICE_HOST: joi.string().required(),
-    DRIVERS_MICROSERVICE_PORT: joi.number().required()
+    
 })
 .unknown(true)
 
@@ -25,7 +26,7 @@ const envVars: EnvVars = value
 
 export const envs = {
     port: envVars.PORT,
+    driversMicroservicePort: envVars.DRIVERS_MICROSERVICE_PORT,
     driversMicroserviceHost: envVars.DRIVERS_MICROSERVICE_HOST,
-    driversMicroservicePort: envVars.DRIVERS_MICROSERVICE_PORT
     
 }

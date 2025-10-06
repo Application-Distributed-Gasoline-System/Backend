@@ -4,7 +4,7 @@ import{ Transport, type ClientGrpc } from '@nestjs/microservices';
 import type { Observable } from 'rxjs';;
 
 export interface DriversService {
-  GetAllDrivers(data: {}): Observable<{ drivers: any[] }>;
+  GetAllDrivers(data: { page: number, limit: number }): Observable<{ drivers: any[] }>;
   GetDriverById(data: { id: string }): Observable<any>;
   CreateDriver(data: { name: string; license: string }): Observable<any>;
   UpdateDriver(data: { id: string; name: string; license: string }): Observable<any>;
@@ -21,8 +21,8 @@ export class DriversClientService implements OnModuleInit {
     this.driversService = this.client.getService<DriversService>('DriversService');
   }
 
-  getAllDrivers() {
-    return this.driversService.GetAllDrivers({});
+  getAllDrivers(data: {page: number, limit: number}) {
+    return this.driversService.GetAllDrivers( data );
   }
 
   getDriverById(id: string) {

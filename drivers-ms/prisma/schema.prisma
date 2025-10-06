@@ -17,4 +17,6 @@ model Driver {
   id      String @id @default(uuid())
   name    String
   license String
+  // createdAt DateTime @default(now())
+  // updatedAt DateTime @updatedAt
 }
