@@ -1,0 +1,53 @@
+// This is your Prisma schema file.
+// Learn more in the docs: https://pris.ly/d/prisma-schema
+
+// Prisma schema for Vehicles Microservice
+// Fuel Management System - Technical University of Ambato
+// Model: Vehicle
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MachineryType {
+  LIGHT
+  HEAVY
+}
+
+enum EngineType {
+  GASOLINE
+  DIESEL
+  ELECTRIC
+  HYBRID
+}
+
+enum VehicleStatus {
+  OPERATIONAL
+  UNDER_MAINTENANCE
+  OUT_OF_SERVICE
+}
+
+model Vehicle {
+  id               Int             @id @default(autoincrement())
+  plate            String          @unique
+  brand            String
+  model            String
+  year             Int
+  engineType       EngineType  
+  machineryType    MachineryType
+  tankCapacity     Float
+  engineDisplacement Float  
+  averageConsumption Float
+  mileage          Float           @default(0)
+  available        Boolean         @default(true)
+  status           VehicleStatus   @default(OPERATIONAL)
+  registrationDate DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@map("vehicles")
+}
