@@ -9,6 +9,9 @@ interface EnvVars {
 
   AUTH_MICROSERVICE_HOST: string;
   AUTH_MICROSERVICE_PORT: number;
+
+  VEHICLES_MICROSERVICE_HOST: string;
+  VEHICLES_MICROSERVICE_PORT: number;
 }
 
 const envsSchema = joi
@@ -19,6 +22,9 @@ const envsSchema = joi
 
     AUTH_MICROSERVICE_HOST: joi.string().required(),
     AUTH_MICROSERVICE_PORT: joi.number().required(),
+
+    VEHICLES_MICROSERVICE_HOST: joi.string().required(),
+    VEHICLES_MICROSERVICE_PORT: joi.number().required(),
   })
   .unknown(true);
 
@@ -37,4 +43,7 @@ export const envs = {
 
   authMicroserviceHost: envVars.AUTH_MICROSERVICE_HOST,
   authMicroservicePort: envVars.AUTH_MICROSERVICE_PORT,
+
+  vehiclesMicroserviceHost: envVars.VEHICLES_MICROSERVICE_HOST,
+  vehiclesMicroservicePort: envVars.VEHICLES_MICROSERVICE_PORT,
 };
