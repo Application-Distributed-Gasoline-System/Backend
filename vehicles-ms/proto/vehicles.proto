@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package vehicles;
+
+enum EngineType {
+  GASOLINE = 0;
+  DIESEL = 1;
+  ELECTRIC = 2;
+  HYBRID = 3;
+}
+
+enum MachineryType {
+  LIGHT = 0;
+  HEAVY = 1;
+}
+
+message Vehicle {
+  int32 id = 1;
+  string plate = 2;
+  string brand = 3;
+  string model = 4;
+  int32 year = 5;
+  EngineType engineType = 6;
+  MachineryType machineryType = 7;
+  double tankCapacity = 8;
+  double engineDisplacement = 9;
+  double averageConsumption = 10;
+  int32 mileage = 11;
+  bool available = 12;
+}
+
+message VehicleIdRequest {
+  int32 id = 1;
+}
+
+message CreateVehicleRequest {
+  Vehicle vehicle = 1;
+}
+
+message UpdateVehicleRequest {
+  Vehicle vehicle = 1;
+}
+
+message VehicleList {
+  repeated Vehicle vehicles = 1;
+}
+
+message Empty {}
+
+service VehiclesService {
+  rpc GetVehicleById(VehicleIdRequest) returns (Vehicle);
+  rpc GetAllVehicles(Empty) returns (VehicleList);
+  rpc CreateVehicle(CreateVehicleRequest) returns (Vehicle);
+  rpc UpdateVehicle(UpdateVehicleRequest) returns (Vehicle);
+  rpc DeleteVehicle(VehicleIdRequest) returns (Empty);
+}
