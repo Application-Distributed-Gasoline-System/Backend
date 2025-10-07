@@ -3,15 +3,21 @@ import { VehiclesService } from './vehicles.service';
 import { GrpcMethod } from '@nestjs/microservices';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
+import { PaginationDto } from 'src/common';
 
 @Controller()
 export class VehiclesController {
   constructor(private readonly vehiclesService: VehiclesService) {}
 
   @GrpcMethod('VehiclesService', 'GetAllVehicles')
-  async getAllVehicles() {
-    const vehicles = await this.vehiclesService.getAllVehicles();
-    return { vehicles };
+  async getAllVehicles(data : PaginationDto) {
+    const response = await this.vehiclesService.getAllVehicles(data);
+    return {
+      vehicles: response.data,
+      total: response.total,
+      page: response.page,
+      totalPages: response.totalPages
+    };
   }
 
   @GrpcMethod('VehiclesService', 'GetVehicleById')
@@ -29,12 +35,11 @@ export class VehiclesController {
   @GrpcMethod('VehiclesService', 'DeleteVehicle')
   async deleteVehicle(data: { id: number }) {
     const vehicle = await this.vehiclesService.deleteVehicle(data.id);
-    return vehicle ? { ...vehicle, message: 'Deleted' } : { message: 'Not found' };
+    return vehicle ? { ...vehicle, message: 'Deleted' } : { message: 'Not found' }; 
   }
 
   @GrpcMethod('VehiclesService', 'UpdateVehicle')
   async updateVehicle(data: { vehicle: UpdateVehicleDto & { id: number } }) {
-    console.log('📦 Data received for update:', data);
 
     const engineTypeMap = ['GASOLINE', 'DIESEL', 'ELECTRIC', 'HYBRID'];
     const machineryTypeMap = ['LIGHT', 'HEAVY'];

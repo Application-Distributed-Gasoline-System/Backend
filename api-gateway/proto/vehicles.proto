@@ -45,12 +45,24 @@ message VehicleList {
   repeated Vehicle vehicles = 1;
 }
 
-message Empty {}
+message GetAllVehiclesResponse {
+  repeated Vehicle vehicles = 1; 
+  int32 total = 2;                      
+  int32 page = 3;                       
+  int32 totalPages = 4;                 
+}
+
+message GetAllVehiclesRequest {
+  int32 page = 1;
+  int32 limit = 2;
+}
+
+
 
 service VehiclesService {
   rpc GetVehicleById(VehicleIdRequest) returns (Vehicle);
-  rpc GetAllVehicles(Empty) returns (VehicleList);
+  rpc GetAllVehicles(GetAllVehiclesRequest) returns (GetAllVehiclesResponse);
   rpc CreateVehicle(CreateVehicleRequest) returns (Vehicle);
   rpc UpdateVehicle(UpdateVehicleRequest) returns (Vehicle);
-  rpc DeleteVehicle(VehicleIdRequest) returns (Empty);
+  rpc DeleteVehicle(VehicleIdRequest) returns (Vehicle);
 }

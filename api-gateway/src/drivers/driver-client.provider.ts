@@ -1,7 +1,7 @@
-import { ClientOptions } from '@grpc/grpc-js';
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
-import{ Transport, type ClientGrpc } from '@nestjs/microservices';
-import type { Observable } from 'rxjs';;
+import{ type ClientGrpc } from '@nestjs/microservices';
+import type { Observable } from 'rxjs';import { DRIVERS_PACKAGE } from 'src/config';
+;
 
 export interface DriversService {
   GetAllDrivers(data: { page: number, limit: number }): Observable<{ drivers: any[] }>;
@@ -15,7 +15,7 @@ export interface DriversService {
 export class DriversClientService implements OnModuleInit {
   private driversService: DriversService;
 
-  constructor(@Inject('DRIVERS_PACKAGE') private readonly client: ClientGrpc) {}
+  constructor(@Inject(DRIVERS_PACKAGE) private readonly client: ClientGrpc) {}
 
   onModuleInit() {
     this.driversService = this.client.getService<DriversService>('DriversService');

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, HttpException } from '@nestjs/common';
 import { DriversClientService } from './driver-client.provider';
 import { firstValueFrom } from 'rxjs';
 import { CreateDriverDto } from './dto/create-driver.dto';
@@ -8,7 +8,7 @@ import { RpcException } from '@nestjs/microservices';
 
 @Controller('drivers')
 export class DriversController {
-  constructor(private readonly driversClient: DriversClientService) {}
+  constructor(private readonly driversClient: DriversClientService) { }
 
   @Get()
   async getAll(@Query() paginationDto: PaginationDto) {
@@ -17,18 +17,12 @@ export class DriversController {
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-
     try {
-      
       return await firstValueFrom(this.driversClient.getDriverById(id));
-
     } catch (error) {
       throw new RpcException(error);
-      
     }
-
   }
-
   @Post()
   async create(@Body() createDriverDto: CreateDriverDto) {
     return firstValueFrom(this.driversClient.createDriver(createDriverDto));
@@ -41,6 +35,10 @@ export class DriversController {
 
   @Delete(':id')
   async remove(@Param('id') id: string) {
-    return firstValueFrom(this.driversClient.deleteDriver(id));
+    try {
+      return await firstValueFrom(this.driversClient.deleteDriver(id));
+    } catch (error) {
+      throw new RpcException(error);
+    }
   }
 }

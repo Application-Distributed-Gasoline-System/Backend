@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { CreateDriverDto } from './dto/create-driver.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
 import { NatsClient } from 'src/nats-client.provider';
-import { PaginationDto } from 'src/common';
+import { GrpcStatus, PaginationDto } from 'src/common';
 import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
@@ -41,22 +41,23 @@ export class DriversService extends PrismaClient implements OnModuleInit {
   }
 
   async getDriverById(id: string) {
-    const driver = this.driver.findUnique({ where: { id } });
+    const driver = await this.driver.findUnique({ where: { id } });
     
     if ( !driver) throw new RpcException({
-      message: `Driver with id: ${ id } not found`,
-      status: HttpStatus.BAD_REQUEST
+      code: GrpcStatus.NOT_FOUND,
+      message: `Driver with id: ${ id } not found`
     });
 
     return driver;
     
   }
 
-  async createDriver(data: CreateDriverDto) {
-    const driver = this.driver.create({ data });
-    //await this.natsClient.emit('driver.created', driver); // <--- evento NATS de crear
-    return driver; // Si no ocurre ningun error mientras hace lo que tenga que hacer el microservicio retorna los conductores
-  }
+ async createDriver(data: CreateDriverDto) {
+  const driver = this.driver.create({ data });
+  //await this.natsClient.emit('driver.created', driver); // <--- evento NATS de crear
+   // Si no ocurre ningun error mientras hace lo que tenga que hacer el microservicio retorna los conductores
+  return driver
+}
 
   async updateDriver(id: string, data: UpdateDriverDto) {
     const driver = this.driver.update({ where: { id }, data });
@@ -65,8 +66,14 @@ export class DriversService extends PrismaClient implements OnModuleInit {
   }
 
   async deleteDriver(id: string) {
-    const driver = this.driver.delete({ where: { id } });
+    const driver = await this.driver.findUnique({ where: { id } });
+
+    if ( !driver) throw new RpcException({
+      code: GrpcStatus.NOT_FOUND,
+      message: `Driver with id: ${ id } not found`
+    });
+
     //await this.natsClient.emit('driver.delete', driver); // <--- evento NATS de actualizar
-    return driver; // Si no ocurre ningun error mientras hace lo que tenga que hacer el microservicio retorna los conductores
+    return this.driver.delete({ where: { id } }) // Si no ocurre ningun error mientras hace lo que tenga que hacer el microservicio retorna los conductores
   }
 }

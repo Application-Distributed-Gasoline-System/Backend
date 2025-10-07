@@ -1,9 +1,10 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
-import{ Transport, type ClientGrpc } from '@nestjs/microservices';
+import{ type ClientGrpc } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
+import { VEHICLES_PACKAGE } from 'src/config';
 
 export interface VehiclesService {
-  GetAllVehicles(data: {}): Observable<{ vehicles: any[] }>;
+  GetAllVehicles(data: { page: number, limit: number }): Observable<{ vehicles: any[] }>;
   GetVehicleById(data: { id: number }): Observable<any>;
   CreateVehicle(data: { vehicle: any }): Observable<any>;
   UpdateVehicle(data: { vehicle: any }): Observable<any>;
@@ -14,14 +15,14 @@ export interface VehiclesService {
 export class VehiclesClientService implements OnModuleInit {
   private vehiclesService: VehiclesService;
 
-  constructor(@Inject('VEHICLES_PACKAGE') private readonly client: ClientGrpc) {}
+  constructor(@Inject(VEHICLES_PACKAGE) private readonly client: ClientGrpc) {}
 
   onModuleInit() {
     this.vehiclesService = this.client.getService<VehiclesService>('VehiclesService');
   }
 
-  getAllVehicles() {
-    return this.vehiclesService.GetAllVehicles({});
+  getAllVehicles(data: {page: number, limit: number}) {
+    return this.vehiclesService.GetAllVehicles( data );
   }
 
   getVehicleById(id: number) {

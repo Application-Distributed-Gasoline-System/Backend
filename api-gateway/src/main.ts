@@ -19,10 +19,10 @@ async function bootstrap() {
     })
   )
 
-  app.useGlobalFilters(new RpcCustomExceptionFilter)
+  app.useGlobalFilters(new RpcCustomExceptionFilter())
 
   await app.listen(envs.port);
 
-  logger.log(`Api gatewat ejecutandose en el puerto: ${envs.port}`);
+  logger.log(`Api gateway ejecutandose en el puerto: ${envs.port}`);
 }
 bootstrap();
