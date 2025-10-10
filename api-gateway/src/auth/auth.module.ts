@@ -4,6 +4,8 @@ import { AuthController } from './auth.controller';
 import { AuthClientService } from './auth-client.provider';
 import { join } from 'path';
 import { AUTH_PACKAGE, envs } from 'src/config';
+import { AuthGuard } from './auth.guard';
+import { RolesGuard } from './roles.guard';
 
 @Module({
   imports: [
@@ -20,6 +22,6 @@ import { AUTH_PACKAGE, envs } from 'src/config';
     ]),
   ],
   controllers: [AuthController],
-  providers: [AuthClientService],
+  providers: [AuthClientService, AuthGuard, RolesGuard],
 })
 export class AuthModule {}

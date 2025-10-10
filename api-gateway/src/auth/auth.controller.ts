@@ -1,6 +1,8 @@
 import { Controller, Post, Body, HttpCode } from '@nestjs/common';
 import { AuthClientService } from './auth-client.provider'; // Asegúrate que esta ruta sea correcta
 import { firstValueFrom } from 'rxjs';
+import { Public } from './public.decorator';
+import { Roles } from './roles.decorator';
 import {
   RegisterDto,
   LoginDto,
@@ -17,6 +19,7 @@ export class AuthController {
   // 1. REGISTRO
   // POST /auth/register
   // ------------------------------------------
+  @Roles('ADMIN')
   @Post('register')
   @HttpCode(201) // 201 Created es estándar para el registro exitoso
   async register(@Body() data: RegisterDto) {
@@ -28,6 +31,7 @@ export class AuthController {
   // 2. LOGIN
   // POST /auth/login
   // ------------------------------------------
+  @Public()
   @Post('login')
   @HttpCode(200)
   async login(@Body() data: LoginDto) {
@@ -50,6 +54,7 @@ export class AuthController {
   // 4. SOLICITAR RESETEO DE CONTRASEÑA
   // POST /auth/request-reset
   // ------------------------------------------
+  @Public()
   @Post('request-reset')
   @HttpCode(200)
   async requestPasswordReset(@Body() data: RequestResetDto) {
