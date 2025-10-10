@@ -56,7 +56,7 @@ async function bootstrap() {
 
   await app.listen();
   console.log(
-    `gRPC Auth microservice running on port ${process.env.GRPC_PORT}`,
+    `gRPC Auth microservice running on port ${envs.port}`,
   );
 }
 bootstrap();

@@ -7,7 +7,7 @@ services:
       - "8222:8222"
 
   api-gateway:
-    build: './api-gateway'
+    build: ./api-gateway
     ports:
       - "3000:3000"
     volumes:
@@ -24,9 +24,7 @@ services:
       - AUTH_MICROSERVICE_PORT=5002 
 
   drivers-ms:
-    build: './drivers-ms'
-    ports:
-      - "3001:5000"
+    build: ./drivers-ms
     volumes:
       - ./drivers-ms/src:/usr/src/app/src
       - ./proto:/usr/src/proto
@@ -38,9 +36,7 @@ services:
       - NATS_SERVERS=nats://nats-server:4222
 
   vehicles-ms:
-    build: './vehicles-ms'
-    ports:
-      - "3002:5001"
+    build: ./vehicles-ms
     volumes:
       - ./vehicles-ms/src:/usr/src/app/src
       - ./proto:/usr/src/app/proto
@@ -51,9 +47,7 @@ services:
       - DATABASE_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/vehiclesdb?sslmode=require&channel_binding=require
 
   auth-ms:
-    build: './auth-ms'
-    ports:
-      - "3003:5002"
+    build: ./auth-ms
     volumes:
       - ./auth-ms/src:/usr/src/app/src
       - ./proto:/usr/src/proto
