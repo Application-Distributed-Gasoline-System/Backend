@@ -4,7 +4,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
-import { UserRole } from '../../generated/prisma';
 import * as jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import * as dotenv from 'dotenv';
@@ -12,6 +11,8 @@ import { PrismaService } from '../prisma/prisma.Service';
 import * as bcrypt from 'bcryptjs';
 import { isBefore, addHours  } from 'date-fns';
 import { MailerService } from '../mailer/mailer.service';
+import { UserRole } from '@prisma/client';
+import { envs } from 'src/config';
 dotenv.config();
 
 @Injectable()
@@ -22,12 +23,12 @@ export class AuthService {
     private readonly mailerService: MailerService,
   ) {}
 
-  private jwtSecret = process.env.JWT_SECRET || 'supersecret';
-  private jwtExpiresIn = Number(process.env.JWT_EXPIRES_IN) || 900;
+  private jwtSecret = envs.jwt_secret || 'supersecret';
+  private jwtExpiresIn = Number(envs.jwt_expires_in) || 900;
   private refreshExpiresDays =
-    Number(process.env.REFRESH_TOKEN_EXPIRES_DAYS) || 30;
+    Number(envs.refres_token_expires_days) || 30;
   private resetTokenExpiresHours =
-    Number(process.env.RESET_TOKEN_EXPIRES_HOURS) || 24;
+    Number(envs.reset_token_expires_hours) || 24;
 
   async register(
     email: string,
@@ -206,7 +207,7 @@ export class AuthService {
       success: true,
       message: message,
       // Solo devolver en desarrollo
-      resetToken: process.env.NODE_ENV !== 'production' ? resetToken : null,
+      resetToken: envs.node_env !== 'production' ? resetToken : null,
     };
   }
 

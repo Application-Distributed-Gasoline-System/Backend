@@ -5,11 +5,10 @@ import {
   Transport,
   RpcException,
 } from '@nestjs/microservices';
-import * as path from 'path';
-import * as dotenv from 'dotenv';
 import { ValidationPipe } from '@nestjs/common';
 import { status } from '@grpc/grpc-js'; // Importar el estado gRPC
-dotenv.config();
+import { envs } from './config';
+import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
@@ -18,8 +17,8 @@ async function bootstrap() {
       transport: Transport.GRPC,
       options: {
         package: 'auth',
-        protoPath: path.join(__dirname, '..', 'proto', 'auth.proto'),
-        url: `0.0.0.0:${process.env.GRPC_PORT || 50051}`,
+        protoPath: join(__dirname, '../../proto/auth.proto'),
+        url: `${envs.host}:${envs.port}`,
       },
     },
   );
@@ -57,7 +56,7 @@ async function bootstrap() {
 
   await app.listen();
   console.log(
-    `gRPC Auth microservice running on port ${process.env.GRPC_PORT || 50051}`,
+    `gRPC Auth microservice running on port ${process.env.GRPC_PORT}`,
   );
 }
 bootstrap();

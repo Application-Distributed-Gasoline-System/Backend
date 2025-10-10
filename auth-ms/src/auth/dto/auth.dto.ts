@@ -5,7 +5,6 @@ import {
   IsOptional,
   IsIn,
 } from 'class-validator';
-import { UserRole } from '../../../generated/prisma';
 import { Type } from 'class-transformer';
 const validRoles = ['0', '1', '2'];
 

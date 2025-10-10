@@ -1,0 +1,19 @@
+FROM node:20-alpine3.19
+
+WORKDIR /usr/src/app
+
+COPY package.json ./
+COPY package-lock.json ./
+
+RUN npm install
+
+COPY . .
+
+# Para entorno de produccion copiar los archivos proto desde el contexto principal
+# (confirmar tener ../proto relativo correcto en la estructura)
+# COPY ../proto ./proto
+
+
+RUN npx prisma generate
+
+EXPOSE 5001

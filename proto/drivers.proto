@@ -23,12 +23,7 @@ message DriverByIdRequest {
 
 message CreateDriverRequest {
   string name = 1;           // Desde Auth Service
-  string license = 2;        // C, D, E o G
-  string email = 3;
-  string userId = 4;         // Desde Auth Service
-  string phone = 5;
-  bool isAvailable = 6;
-  string birthDate = 7;      // Formato ISO (ej: "1998-05-12T00:00:00Z")
+  string userId = 2;         // Desde Auth Service
 }
 
 message UpdateDriverRequest {

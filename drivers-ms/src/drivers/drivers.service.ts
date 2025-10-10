@@ -1,16 +1,15 @@
-import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { CreateDriverDto } from './dto/create-driver.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
-import { NatsClient } from 'src/nats-client.provider';
 import { GrpcStatus, PaginationDto } from 'src/common';
-import { RpcException } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class DriversService extends PrismaClient implements OnModuleInit {
   private readonly logger = new Logger('DriversService');
 
-  constructor(/*private readonly natsClient: NatsClient*/){
+  constructor(@Inject('NATS_SERVICE') private readonly natsClient: ClientProxy){
     super()
   }
 

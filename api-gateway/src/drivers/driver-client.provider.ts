@@ -6,7 +6,7 @@ import type { Observable } from 'rxjs';import { DRIVERS_PACKAGE } from 'src/conf
 export interface DriversService {
   GetAllDrivers(data: { page: number, limit: number }): Observable<{ drivers: any[] }>;
   GetDriverById(data: { id: string }): Observable<any>;
-  CreateDriver(data: { name: string; license: string }): Observable<any>;
+  CreateDriver(data: { name: string; userId: string }): Observable<any>;
   UpdateDriver(data: { id: string; name: string; license: string }): Observable<any>;
   DeleteDriver(data: { id: string }): Observable<any>;
 }
@@ -29,7 +29,7 @@ export class DriversClientService implements OnModuleInit {
     return this.driversService.GetDriverById({ id });
   }
 
-  createDriver(data: { name: string; license: string }) {
+  createDriver(data: { name: string; userId: string }) {
     return this.driversService.CreateDriver(data);
   }
 

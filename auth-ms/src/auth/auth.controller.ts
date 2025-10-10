@@ -2,8 +2,8 @@ import { Controller, BadRequestException } from '@nestjs/common';
 import { GrpcMethod, RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { AuthService } from './auth.service';
-import { UserRole } from '../../generated/prisma';
 import { RegisterDto } from './dto/auth.dto';
+import { UserRole } from '@prisma/client';
 
 @Controller()
 export class AuthController {

@@ -12,7 +12,7 @@ async function bootstrap() {
     transport: Transport.GRPC,
     options: {
       package: 'drivers',
-      protoPath: join(__dirname, '../proto/drivers.proto'),
+      protoPath: join(__dirname, '../../proto/drivers.proto'),
       url: `${envs.host}:${envs.port}`,
     },
   });

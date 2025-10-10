@@ -23,12 +23,12 @@ enum License {
 model Driver {
   id          String   @id @default(uuid())
   name        String // DESDE AUTH SERVICE
-  license     License
-  email       String
+  license     License?
+  email       String?
   userId      String // DESDE AUTH SERVICE por el momento en el json se puede poner un string cualquiera
-  phone       String
-  isAvailable Boolean
-  birthDate   DateTime
+  phone       String?
+  isAvailable Boolean @default(true)
+  birthDate   DateTime?
   // para despues la ubicacion si es bueno
   registrationDate DateTime        @default(now())
   updatedAt        DateTime        @updatedAt

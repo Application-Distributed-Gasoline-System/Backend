@@ -27,25 +27,29 @@ Además, usamos **Prisma** como ORM para simplificar la interacción con las bas
 - **Gestión de dependencias:** npm  
 - **Versionamiento:** Git / GitHub  
 - **Entorno de desarrollo:** VSCode  
-- **Monorepo:** todos los microservicios y la API Gateway en un solo repositorio  
+- **Monorepo:** todos los microservicios y la API Gateway en un solo repositorio
+- **Docker**: cada microservicio y la API Gateway tienen su propio Dockerfile y .dockerignore.  
 
 
 ## Estructura del proyecto
 
-Backend/ </br>
-├── api-gateway/ # API Gateway (NestJS) </br>
-├── drivers-ms/ # Microservicio de conductores (NestJS) </br>
-├── another-ms/ # Otros microservicios futuros </br>
-├── .gitignore # Reglas de Git para todos los microservicios </br>
-└── README.md # Documentación general </br>
+Backend/<br>
+├── api-gateway/      # API Gateway (NestJS) + Dockerfile + .dockerignore<br>
+├── drivers-ms/       # Microservicio de conductores (NestJS) + Dockerfile + .dockerignore<br>
+├── auth-ms/          # Microservicio de autenticación (NestJS) + Dockerfile + .dockerignore<br>
+├── another-ms/       # Otros microservicios futuros + Dockerfile + .dockerignore<br>
+├── .dockerignore     # Archivos que no queremos copiar en los contenedores<br>
+├── .gitignore        # Reglas de Git para todos los microservicios<br>
+├── docker-compose.yml# Infraestructura con docker<br>
+└── README.md         # Documentación general<br>
 
 ---
 
 ## Requisitos
 
-- Node.js >= 18, tener intalado globalmente nestJS
+- Node.js >= 18, tener instalado globalmente nestJS
 - npm
-- (Opcional) Docker, para después levantar con contenedores
+- Docker
 
 ---
 
@@ -59,7 +63,7 @@ cd Backend
 
 ```
 
-2. Intalar dependencias
+2. Instalar dependencias
 
 - Ir por cada microservicio y la api-gateway e instalar
 
@@ -70,17 +74,29 @@ cd ../drivers-ms
 npm install
 ```
 
-
-3. Levantar microservicio y api-gateway
+- Solo en los microservicios que usan Prisma (no en la API Gateway):
 
 ```bash
-npm run start:dev
+cd ../auth-ms
+npx prisma generate
+
+cd ../drivers-ms
+npx prisma generate
+...
+```
+
+3. Levantar todos los servicios con docker
+
+- Desde la carpeta /backend ejecutar el siguiente comando
+
+```bash
+docker compose up --build -d 
 ```
 
 
 ---
 
-## Configuracion de Primas para microservicio Drivers (Esto NO DEBEN HACER porque se tienen enlazada a mi base de datos en technoSQL, solo es información )
+## Configuracion de Prismas para microservicio Drivers (Esto NO DEBEN HACER porque se tienen enlazada a mi base de datos en technoSQL, solo es información )
 
 
 1. Configurar la conexión a la base de datos en el archivo .env de cada microservicio:

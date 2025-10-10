@@ -1,0 +1,72 @@
+version: '3'
+
+services:
+  nats-server:
+    image: nats:latest
+    ports:
+      - "8222:8222"
+
+  api-gateway:
+    build: './api-gateway'
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./api-gateway/src:/usr/src/app/src
+      - ./proto:/usr/src/app/proto
+    command: npm run start:dev
+    environment:
+      - PORT=3000
+      - DRIVERS_MICROSERVICE_HOST=drivers-ms
+      - DRIVERS_MICROSERVICE_PORT=5000
+      - VEHICLES_MICROSERVICE_HOST=vehicles-ms
+      - VEHICLES_MICROSERVICE_PORT=5001
+      - AUTH_MICROSERVICE_HOST=auth-ms
+      - AUTH_MICROSERVICE_PORT=5002 
+
+  drivers-ms:
+    build: './drivers-ms'
+    ports:
+      - "3001:5000"
+    volumes:
+      - ./drivers-ms/src:/usr/src/app/src
+      - ./proto:/usr/src/proto
+    command: npm run start:dev
+    environment:
+      - PORT=5000
+      - HOST=0.0.0.0
+      - DATABASE_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/driversdb?sslmode=require&channel_binding=require
+      - NATS_SERVERS=nats://nats-server:4222
+
+  vehicles-ms:
+    build: './vehicles-ms'
+    ports:
+      - "3002:5001"
+    volumes:
+      - ./vehicles-ms/src:/usr/src/app/src
+      - ./proto:/usr/src/app/proto
+    command: npm run start:dev
+    environment:
+      - PORT=5001
+      - HOST=0.0.0.0
+      - DATABASE_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/vehiclesdb?sslmode=require&channel_binding=require
+
+  auth-ms:
+    build: './auth-ms'
+    ports:
+      - "3003:5002"
+    volumes:
+      - ./auth-ms/src:/usr/src/app/src
+      - ./proto:/usr/src/proto
+    command: npm run start:dev
+    environment:
+      - PORT=5002
+      - HOST=0.0.0.0
+      - JWT_SECRET=supersecretkeyreplace
+      - JWT_EXPIRES_IN=900
+      - REFRESH_TOKEN_EXPIRES_DAYS=30
+      - RESET_TOKEN_EXPIRES_HOURS=1
+      - DATABASE_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/authdb?sslmode=require&channel_binding=require
+      - SMTP_USER=95e7ab001@smtp-brevo.com
+      - SMTP_PASS=mQRVFGvASkcLtNgj
+      - SENDER_EMAIL=garciadayle2004@gmail.com
+      - NODE_ENV=development
