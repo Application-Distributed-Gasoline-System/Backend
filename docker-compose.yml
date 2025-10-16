@@ -4,7 +4,7 @@ services:
   nats-server:
     image: nats:latest
     ports:
-      - "8222:8222"
+      - "4222:4222"
 
   api-gateway:
     build: './api-gateway'
@@ -36,6 +36,8 @@ services:
       - HOST=0.0.0.0
       - DATABASE_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/driversdb?sslmode=require&channel_binding=require
       - NATS_SERVERS=nats://nats-server:4222
+    depends_on:
+      - nats-server
 
   vehicles-ms:
     build: './vehicles-ms'
@@ -70,3 +72,6 @@ services:
       - SMTP_PASS=mQRVFGvASkcLtNgj
       - SENDER_EMAIL=garciadayle2004@gmail.com
       - NODE_ENV=development
+      - NATS_SERVERS=nats://nats-server:4222
+    depends_on:
+      - nats-server

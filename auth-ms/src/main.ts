@@ -6,7 +6,7 @@ import {
   RpcException,
 } from '@nestjs/microservices';
 import { ValidationPipe } from '@nestjs/common';
-import { status } from '@grpc/grpc-js'; // Importar el estado gRPC
+import { status } from '@grpc/grpc-js';
 import { envs } from './config';
 import { join } from 'path';
 
@@ -23,17 +23,12 @@ async function bootstrap() {
     },
   );
 
-  // ----------------------------------------------------
-  // Configuración del ValidationPipe para gRPC
-  // ----------------------------------------------------
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
       whitelist: true,
 
-      // La clave para que gRPC maneje los errores de validación
       exceptionFactory: (errors) => {
-        // Formatea todos los errores de validación en un único mensaje
         const errorMessage = errors
           .map((error) => {
             const constraints = error.constraints
@@ -44,7 +39,6 @@ async function bootstrap() {
           })
           .join(' | ');
 
-        // Lanza un RpcException con el código INVALID_ARGUMENT (código 3)
         return new RpcException({
           code: status.INVALID_ARGUMENT,
           message: `Validation Failed: ${errorMessage}`,
@@ -52,7 +46,6 @@ async function bootstrap() {
       },
     }),
   );
-  // ----------------------------------------------------
 
   await app.listen();
   console.log(

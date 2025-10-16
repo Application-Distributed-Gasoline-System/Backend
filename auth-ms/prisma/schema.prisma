@@ -15,6 +15,7 @@ model User {
   role                UserRole             @default(DRIVER)
   passwordResetTokens PasswordResetToken[]
   refreshTokens       RefreshToken[]
+  active    Boolean  @default(true)
 }
 
 model RefreshToken {

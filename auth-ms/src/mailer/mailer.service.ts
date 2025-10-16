@@ -10,7 +10,7 @@ export class MailerService {
   constructor(
     private readonly nestMailerService: NestMailerService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   async sendPasswordResetLink(email: string, resetToken: string) {
     // Obtener la URL del frontend de la configuración (debes añadir FRONTEND_URL a tu .env)
@@ -20,12 +20,27 @@ export class MailerService {
     await this.nestMailerService.sendMail({
       to: email,
       subject: 'Restablecer tu Contraseña (Servicio gRPC Auth)',
-      
-      // Usar la plantilla configurada en AppModule
-      template: 'password-reset', 
-      context: { 
-          email: email,
-          resetUrl: resetUrl,
+      template: 'password-reset',
+      context: {
+        email: email,
+        resetUrl: resetUrl,
+      },
+    });
+  }
+  async sendWelcomeEmail(params: { to: string; name: string; email: string; password: string }) {
+    const { to, name, email, password } = params;
+    const frontendBaseUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const loginUrl = `${frontendBaseUrl}/login`;
+
+    await this.nestMailerService.sendMail({
+      to,
+      subject: '¡Bienvenido a nuestra plataforma!',
+      template: 'welcome',
+      context: {
+        name,
+        email,
+        password,
+        loginUrl,
       },
     });
   }

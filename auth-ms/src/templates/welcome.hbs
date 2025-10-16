@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .container {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .header {
+            color: #007bff;
+            margin-bottom: 20px;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin-top: 15px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #555;
+        }
+        .credentials {
+            background-color: #fff;
+            border: 1px solid #eee;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="header">¡Bienvenido {{name}}!</h1>
+        <p>Tu cuenta ha sido creada exitosamente en nuestra plataforma.</p>
+
+        <p>A continuación encontrarás tus credenciales de acceso:</p>
+
+        <div class="credentials">
+            <p><strong>Email:</strong> {{email}}</p>
+            <p><strong>Contraseña:</strong> {{password}}</p>
+        </div>
+
+        <p>Te recomendamos iniciar sesión y cambiar tu contraseña lo antes posible.</p>
+
+        <a href="{{loginUrl}}" class="button">Iniciar Sesión</a>
+
+        <div class="footer">
+            <hr>
+            <p>Si no creaste esta cuenta, ignora este correo de manera segura.</p>
+        </div>
+    </div>
+</body>
+</html>

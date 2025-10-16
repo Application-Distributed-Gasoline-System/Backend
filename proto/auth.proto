@@ -24,9 +24,11 @@ message LoginRequest {
 }
 
 message LoginResponse {
-  string accessToken = 1;
-  string refreshToken = 2;
-  int64 expiresIn = 3;
+  bool success = 1;
+  string message = 2;
+  string accessToken = 3;
+  string refreshToken = 4;
+  int64 expiresIn = 5;
 }
 
 // --- Tokens ---
@@ -80,6 +82,41 @@ message ResetPasswordResponse {
   string message = 2;
 }
 
+message SetUserActiveStatusRequest {
+  string userId = 1;
+  bool active = 2; // true = activar, false = desactivar
+}
+
+message SetUserActiveStatusResponse {
+  bool success = 1;
+  string userId = 2;
+  bool active = 3;
+}
+message GetAllUsersRequest {} 
+message UserInfo {
+  string id = 1;
+  string email = 2;
+  string name = 3;
+  string role = 4;
+  bool active = 5;
+}
+message GetAllUsersResponse {
+  repeated UserInfo users = 1;
+}
+message UpdateUserRequest {
+  string userId = 1;
+  string email = 2;    // opcional
+  string name = 3;     // opcional
+  string role = 4;     // opcional
+  bool active = 5;     // opcional
+}
+
+message UpdateUserResponse {
+  bool success = 1;
+  string message = 2;
+  UserInfo user = 3;
+}
+
 // --- Servicio ---
 service AuthService {
   rpc Register (RegisterRequest) returns (RegisterResponse);
@@ -89,4 +126,7 @@ service AuthService {
   rpc RevokeToken (RevokeRequest) returns (RevokeResponse);
   rpc RequestPasswordReset (RequestPasswordResetRequest) returns (RequestPasswordResetResponse);
   rpc ResetPassword (ResetPasswordRequest) returns (ResetPasswordResponse);
+  rpc SetUserActiveStatus (SetUserActiveStatusRequest) returns (SetUserActiveStatusResponse);
+  rpc GetAllUsers (GetAllUsersRequest) returns (GetAllUsersResponse);
+  rpc UpdateUser (UpdateUserRequest) returns (UpdateUserResponse);
 }

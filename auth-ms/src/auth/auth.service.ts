@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   UnauthorizedException,
+  Inject,
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as jwt from 'jsonwebtoken';
@@ -9,10 +10,11 @@ import { v4 as uuidv4 } from 'uuid';
 import * as dotenv from 'dotenv';
 import { PrismaService } from '../prisma/prisma.Service';
 import * as bcrypt from 'bcryptjs';
-import { isBefore, addHours  } from 'date-fns';
+import { isBefore, addHours } from 'date-fns';
 import { MailerService } from '../mailer/mailer.service';
 import { UserRole } from '@prisma/client';
 import { envs } from 'src/config';
+import { ClientProxy } from '@nestjs/microservices';
 dotenv.config();
 
 @Injectable()
@@ -21,14 +23,13 @@ export class AuthService {
     private usersService: UsersService,
     private prisma: PrismaService,
     private readonly mailerService: MailerService,
-  ) {}
+    @Inject('NATS_SERVICE') private natsClient: ClientProxy,
+  ) { }
 
   private jwtSecret = envs.jwt_secret || 'supersecret';
   private jwtExpiresIn = Number(envs.jwt_expires_in) || 900;
-  private refreshExpiresDays =
-    Number(envs.refres_token_expires_days) || 30;
-  private resetTokenExpiresHours =
-    Number(envs.reset_token_expires_hours) || 24;
+  private refreshExpiresDays = Number(envs.refres_token_expires_days) || 30;
+  private resetTokenExpiresHours = Number(envs.reset_token_expires_hours) || 24;
 
   async register(
     email: string,
@@ -40,6 +41,30 @@ export class AuthService {
     if (existing) throw new BadRequestException('Email already in use');
 
     const user = await this.usersService.create(email, password, role, name);
+    console.log(user);
+    if (user.role === 'DRIVER') {
+      console.log('Emit driver.created', {
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+      });
+      this.natsClient.emit('driver.created', {
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+      });
+    }
+    try {
+      await this.mailerService.sendWelcomeEmail({
+        to: user.email,
+        name: user.name || '',
+        email,
+        password,
+      });
+      console.log(`Welcome email sent to ${email}`);
+    } catch (error) {
+      console.error('Error sending welcome email:', error);
+    }
     return { success: true, message: 'User created', userId: user.id };
   }
 
@@ -60,13 +85,9 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email);
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
-    const ok = await this.usersService.validatePassword(
-      password,
-      user.password,
-    );
+    const ok = await this.usersService.validatePassword(password, user.password);
     if (!ok) throw new UnauthorizedException('Invalid credentials');
 
-    // 1. Crear el PAYLOAD JWT con role
     const accessToken = this.signPayload({
       sub: user.id,
       email: user.email,
@@ -75,7 +96,6 @@ export class AuthService {
 
     const refreshTokenStr = uuidv4() + '.' + uuidv4();
 
-    // 2. Guardar Refresh Token usando PRISMA
     await this.prisma.refreshToken.create({
       data: {
         token: refreshTokenStr,
@@ -162,7 +182,7 @@ export class AuthService {
     };
   }
 
-  // --- 📨 Solicitar reset password ---
+  // --- Solicitar reset password ---
   async requestPasswordReset(email: string) {
     const user = await this.usersService.findByEmail(email);
 
@@ -176,7 +196,7 @@ export class AuthService {
 
     // 1. GENERAR TOKEN y FECHA DE EXPIRACIÓN
     const resetToken = uuidv4() + '-' + uuidv4();
-    const expiresAt = addHours(new Date(), this.resetTokenExpiresHours); // Añadir horas/días
+    const expiresAt = addHours(new Date(), this.resetTokenExpiresHours);
 
     // 2. GUARDAR EN PRISMA
     await this.prisma.passwordResetToken.deleteMany({
@@ -196,8 +216,6 @@ export class AuthService {
       await this.mailerService.sendPasswordResetLink(user.email, resetToken);
     } catch (error) {
       console.error('Error sending reset email:', error);
-      // Decide si fallar aquí o responder éxito (depende de la política de seguridad)
-      // Por ahora, solo logeamos el error y respondemos éxito para no revelar si el correo falló.
     }
 
     // 4. RESPUESTA (Solo devolvemos el token para pruebas, sino es null)
@@ -211,7 +229,7 @@ export class AuthService {
     };
   }
 
-  // --- 🔒 Cambiar la contraseña ---
+  // ---  Cambiar la contraseña ---
   async resetPassword(token: string, newPassword: string) {
     const record = await this.prisma.passwordResetToken.findUnique({
       where: { token },
@@ -237,5 +255,64 @@ export class AuthService {
     });
 
     return { success: true, message: 'Password reset successfully' };
+  }
+
+  async setUserActiveStatus(userId: string, active: boolean) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { active },
+    });
+    return { success: true, userId: user.id, active: user.active };
+  }
+
+  async getAllUsers() {
+    const users = await this.prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        active: true,
+      },
+    });
+    return users;
+  }
+
+  async updateUser(data: {
+    userId: string;
+    email?: string;
+    name?: string;
+    role?: string;
+    active?: boolean;
+  }) {
+    const updateData: any = {};
+
+    if (data.email) {
+      const existing = await this.prisma.user.findUnique({
+        where: { email: data.email },
+      });
+      if (existing && existing.id !== data.userId) {
+        throw new BadRequestException('Email already in use');
+      }
+      updateData.email = data.email;
+    }
+
+    if (data.name) updateData.name = data.name;
+    if (data.role) {
+      const roleMap: Record<string, UserRole> = {
+        '0': 'DRIVER',
+        '1': 'ADMIN',
+        '2': 'DISPATCHER',
+      };
+      updateData.role = roleMap[data.role];
+    }
+    if (typeof data.active === 'boolean') updateData.active = data.active;
+
+    const user = await this.prisma.user.update({
+      where: { id: data.userId },
+      data: updateData,
+    });
+
+    return user;
   }
 }

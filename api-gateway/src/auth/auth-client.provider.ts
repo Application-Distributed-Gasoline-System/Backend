@@ -11,19 +11,21 @@ interface AuthServiceClient {
   ResetPassword(data: any): Observable<any>;
   RevokeToken(data: any): Observable<any>;
   ValidateToken(data: any): Observable<any>;
+  setUserActiveStatus(data: { userId: string; active: boolean }): Observable<any>;
+  GetAllUsers(data: any): Observable<any>;
+  UpdateUser(data: any): Observable<any>;
 }
 
 @Injectable()
 export class AuthClientService implements OnModuleInit {
   private authService: AuthServiceClient;
 
-  constructor(@Inject('AUTH_PACKAGE') private client: ClientGrpc) {}
+  constructor(@Inject('AUTH_PACKAGE') private client: ClientGrpc) { }
 
   onModuleInit() {
     this.authService = this.client.getService<AuthServiceClient>('AuthService');
   }
 
-  // Métodos wrapper para el controlador
   register(data: any) {
     return this.authService.Register(data);
   }
@@ -44,5 +46,14 @@ export class AuthClientService implements OnModuleInit {
   }
   validateToken(data: any) {
     return this.authService.ValidateToken(data);
+  }
+  setUserActiveStatus(data: { userId: string; active: boolean }) {
+    return this.authService.setUserActiveStatus(data);
+  }
+  getAllUsers() {
+    return this.authService.GetAllUsers({});
+  }
+  updateUser(data: any) {
+    return this.authService.UpdateUser(data);
   }
 }

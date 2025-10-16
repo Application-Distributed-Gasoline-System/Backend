@@ -8,7 +8,16 @@ import { envs } from './config';
 async function bootstrap() {
   const logger = new Logger('Main');
 
-  const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
+  const app = await NestFactory.create(AppModule);
+
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.NATS,
+    options: {
+      servers: [process.env.NATS_SERVERS || 'nats://nats-server:4222'],
+    },
+  });
+
+  app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
       package: 'drivers',
@@ -19,7 +28,10 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
 
-  await app.listen();
-  logger.log(`Microservicio gRPC ejecutándose en: ${envs.host}:${envs.port}`);
+  await app.startAllMicroservices();
+  await app.listen(3001);
+
+  logger.log(`✅ Drivers microservice listening via gRPC (${envs.host}:${envs.port}) and NATS`);
 }
+
 bootstrap();

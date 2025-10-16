@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, Get, Patch } from '@nestjs/common';
 import { AuthClientService } from './auth-client.provider'; // Asegúrate que esta ruta sea correcta
 import { firstValueFrom } from 'rxjs';
 import { Public } from './public.decorator';
@@ -9,17 +9,20 @@ import {
   RefreshTokenDto,
   RequestResetDto,
   ResetPasswordDto,
+  UpdateUserDto,
+  SetActiveDto,
 } from './dto/auth.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authClient: AuthClientService) {}
+  constructor(private readonly authClient: AuthClientService) { }
 
   // ------------------------------------------
-  // 1. REGISTRO
+  // 1. CRUD: REGISTRO (CREATE)
   // POST /auth/register
   // ------------------------------------------
   @Roles('ADMIN')
+  //@Public()
   @Post('register')
   @HttpCode(201) // 201 Created es estándar para el registro exitoso
   async register(@Body() data: RegisterDto) {
@@ -67,6 +70,7 @@ export class AuthController {
   // 5. COMPLETAR RESETEO DE CONTRASEÑA
   // POST /auth/reset-password
   // ------------------------------------------
+  @Public()
   @Post('reset-password')
   @HttpCode(200)
   async resetPassword(@Body() data: ResetPasswordDto) {
@@ -79,7 +83,34 @@ export class AuthController {
   @Post('logout')
   @HttpCode(200)
   async revokeRefreshToken(@Body() data: RefreshTokenDto) {
-    // El DTO RefreshTokenDto ya existe y contiene el refreshToken
     return firstValueFrom(this.authClient.revokeToken(data));
   }
+  // --- 7.CRUD: DESACTIVAR-ACTIVAR USUARIO (DELETE) ---
+  // POST /auth/set-active
+  @Post('set-active')
+  @Roles('ADMIN')
+  @HttpCode(200)
+  async setUserActive(@Body() body: SetActiveDto) {
+    return firstValueFrom(
+      this.authClient.setUserActiveStatus({ userId: body.userId, active: body.active })
+    );
+  }
+  // --- 8.CRUD: TRAER TODOS LOS USUARIOS (READ) ---
+  // POST /auth/users
+  @Roles('ADMIN')
+  @Get('users')
+  async getAllUsers() {
+    const res = await firstValueFrom(this.authClient.getAllUsers());
+    return res.users;
+  }
+
+  // --- 9.CRUD: ACTUALIZAR INFORMACION DE USUARIO (UPDATE) ---
+  // POST /auth/users
+  @Roles('ADMIN')
+  @Patch('users')
+  async updateUser(@Body() body: UpdateUserDto) {
+    const res = await firstValueFrom(this.authClient.updateUser(body));
+    return res;
+  }
+
 }

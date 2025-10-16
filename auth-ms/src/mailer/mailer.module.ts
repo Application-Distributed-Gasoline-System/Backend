@@ -11,7 +11,6 @@ import { MailerService } from './mailer.service';
 @Global()
 @Module({
   imports: [
-    // 1. Configuración de la conexión SMTP y plantillas (todo centralizado aquí)
     NestMailerModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -19,7 +18,6 @@ import { MailerService } from './mailer.service';
           host: 'smtp-relay.sendinblue.com',
           port: 587,
           secure: false,
-          // 🚨 SOLUCIÓN INSEGURA: DESHABILITAR LA VERIFICACIÓN 🚨
           tls: {
             rejectUnauthorized: false,
           },
@@ -33,7 +31,7 @@ import { MailerService } from './mailer.service';
         },
         // Configuración de Plantillas
         template: {
-          // Usa path.join para resolver la ruta a src/templates desde el directorio de este archivo
+          
           dir: path.join(__dirname, '..', 'templates'),
           adapter: new HandlebarsAdapter(),
           options: {

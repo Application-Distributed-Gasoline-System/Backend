@@ -8,6 +8,7 @@ CREATE TABLE "User" (
     "password" TEXT NOT NULL,
     "name" TEXT,
     "role" "UserRole" NOT NULL DEFAULT 'DRIVER',
+    "active" BOOLEAN NOT NULL DEFAULT true,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );

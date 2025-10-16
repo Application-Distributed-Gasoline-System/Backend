@@ -4,6 +4,7 @@ import {
   MinLength,
   IsOptional,
   IsIn,
+  IsBoolean,
 } from 'class-validator';
 const validRoles = ['0', '1', '2'];
 
@@ -51,4 +52,30 @@ export class ResetPasswordDto {
   @MinLength(8)
   // La nueva contraseña que el usuario quiere usar.
   newPassword: string;
+}
+
+export class UpdateUserDto {
+  @IsString()
+  userId: string;
+
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(validRoles)
+  role?: string;
+}
+
+export class SetActiveDto {
+  @IsString()
+  userId: string;
+
+  @IsBoolean()
+  active: boolean;
 }

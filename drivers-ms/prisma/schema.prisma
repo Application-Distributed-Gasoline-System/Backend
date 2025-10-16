@@ -25,7 +25,7 @@ model Driver {
   name        String // DESDE AUTH SERVICE
   license     License?
   email       String?
-  userId      String // DESDE AUTH SERVICE por el momento en el json se puede poner un string cualquiera
+  userId      String   @unique // DESDE AUTH SERVICE por el momento en el json se puede poner un string cualquiera
   phone       String?
   isAvailable Boolean @default(true)
   birthDate   DateTime?
