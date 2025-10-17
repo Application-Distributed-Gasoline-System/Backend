@@ -108,4 +108,48 @@ export class DriversService extends PrismaClient implements OnModuleInit {
     //await this.natsClient.emit('driver.delete', driver); // <--- evento NATS de actualizar
     return this.driver.delete({ where: { id } }); // Si no ocurre ningun error mientras hace lo que tenga que hacer el microservicio retorna los conductores
   }
+  // Actualiza la disponibilidad del conductor
+  async updateDriverAvailability(userId: string, active: boolean) {
+    const driver = await this.driver.findUnique({ where: { userId } });
+    if (!driver) {
+      this.logger.warn(`Driver con userId ${userId} no encontrado para actualizar disponibilidad`);
+      return;
+    }
+
+    await this.driver.update({
+      where: { userId },
+      data: { isAvailable: active },
+    });
+
+    this.logger.log(`Driver ${driver.id} disponibilidad actualizada a ${active}`);
+  }
+
+  // Actualiza el nombre del conductor
+  async updateDriverName(userId: string, name: string) {
+    const driver = await this.driver.findUnique({ where: { userId } });
+    if (!driver) {
+      this.logger.warn(`Driver con userId ${userId} no encontrado para actualizar nombre`);
+      return;
+    }
+
+    await this.driver.update({
+      where: { userId },
+      data: { name },
+    });
+
+    this.logger.log(`Driver ${driver.id} nombre actualizado a ${name}`);
+  }
+
+  // Eliminar conductor usando userId 
+  async deleteByUserId(userId: string) {
+    const driver = await this.driver.findUnique({ where: { userId } });
+
+    if (!driver) {
+      this.logger.warn(`Driver con userId ${userId} no encontrado para eliminar`);
+      return;
+    }
+
+    await this.driver.delete({ where: { userId } });
+    this.logger.log(`Driver con userId ${userId} eliminado correctamente`);
+  }
 }

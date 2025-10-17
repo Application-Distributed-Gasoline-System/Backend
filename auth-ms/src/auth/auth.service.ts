@@ -262,6 +262,13 @@ export class AuthService {
       where: { id: userId },
       data: { active },
     });
+    if (user.role === 'DRIVER') {
+      this.natsClient.emit('driver.status.updated', {
+        userId: user.id,
+        active: user.active,
+      });
+      console.log('Emit driver.status.updated', { userId: user.id, active: user.active });
+    }
     return { success: true, userId: user.id, active: user.active };
   }
 
@@ -285,34 +292,77 @@ export class AuthService {
     role?: string;
     active?: boolean;
   }) {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { id: data.userId },
+    });
+    if (!existingUser) throw new BadRequestException('User not found');
+
     const updateData: any = {};
 
     if (data.email) {
-      const existing = await this.prisma.user.findUnique({
+      const existingEmail = await this.prisma.user.findUnique({
         where: { email: data.email },
       });
-      if (existing && existing.id !== data.userId) {
+      if (existingEmail && existingEmail.id !== data.userId) {
         throw new BadRequestException('Email already in use');
       }
       updateData.email = data.email;
     }
 
     if (data.name) updateData.name = data.name;
+    if (typeof data.active === 'boolean') updateData.active = data.active;
+
+    // Mapear roles entrantes
+    let newRole: UserRole | undefined;
     if (data.role) {
       const roleMap: Record<string, UserRole> = {
         '0': 'DRIVER',
         '1': 'ADMIN',
         '2': 'DISPATCHER',
       };
-      updateData.role = roleMap[data.role];
+      newRole = roleMap[data.role];
+      updateData.role = newRole;
     }
-    if (typeof data.active === 'boolean') updateData.active = data.active;
 
     const user = await this.prisma.user.update({
       where: { id: data.userId },
       data: updateData,
     });
 
+    // Lógica de eventos NATS
+    const oldRole = existingUser.role;
+    const currentRole = user.role;
+
+    // 1️. Si el usuario era DRIVER y ahora ya no lo es → eliminar del microservicio de drivers
+    if (oldRole === 'DRIVER' && currentRole !== 'DRIVER') {
+      this.natsClient.emit('driver.deleted', { userId: user.id });
+      console.log('Emit driver.deleted', { userId: user.id });
+    }
+
+    // 2️. Si el usuario no era DRIVER y ahora sí lo es → crear nuevo driver
+    else if (oldRole !== 'DRIVER' && currentRole === 'DRIVER') {
+      this.natsClient.emit('driver.created', {
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+      });
+      console.log('Emit driver.created (role promoted to DRIVER)', {
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+      });
+    }
+
+    // 3. Si sigue siendo DRIVER y solo cambió el nombre → actualizar en drivers
+    else if (currentRole === 'DRIVER' && data.name) {
+      this.natsClient.emit('driver.name.updated', {
+        userId: user.id,
+        name: user.name,
+      });
+      console.log('Emit driver.name.updated', { userId: user.id, name: user.name });
+    }
+
     return user;
   }
+
 }

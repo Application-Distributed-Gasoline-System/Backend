@@ -8,12 +8,31 @@ import { PaginationDto } from 'src/common';
 @Controller()
 export class DriversController {
   private readonly logger = new Logger(DriversController.name);
-  constructor(private readonly driversService: DriversService) {}
+  constructor(private readonly driversService: DriversService) { }
 
   @EventPattern('driver.created')
   async handleDriverCreated(@Payload() data: any) {
     this.logger.log(`Received driver.created event: ${JSON.stringify(data)}`);
     await this.driversService.createFromAuth(data);
+  }
+  // Evento recibido cuando cambia el estado (activo/disponible)
+  @EventPattern('driver.status.updated')
+  async handleDriverStatusUpdated(@Payload() data: { userId: string; active: boolean }) {
+    this.logger.log(`Received driver.status.updated event: ${JSON.stringify(data)}`);
+    await this.driversService.updateDriverAvailability(data.userId, data.active);
+  }
+
+  // Evento recibido cuando se actualiza el nombre del conductor
+  @EventPattern('driver.name.updated')
+  async handleDriverNameUpdated(@Payload() data: { userId: string; name: string }) {
+    this.logger.log(`Received driver.name.updated event: ${JSON.stringify(data)}`);
+    await this.driversService.updateDriverName(data.userId, data.name);
+  }
+
+  @EventPattern('driver.deleted')
+  async handleDriverDeleted(@Payload() data: { userId: string }) {
+    this.logger.log(`Received driver.deleted event: ${JSON.stringify(data)}`);
+    await this.driversService.deleteByUserId(data.userId);
   }
 
   // Obtener todos los conductores

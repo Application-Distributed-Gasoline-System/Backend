@@ -38,7 +38,6 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   async login(@Body() data: LoginDto) {
-    // Nota: El DTO LoginDto debe mapear los campos (email, password)
     return firstValueFrom(this.authClient.login(data));
   }
 
@@ -61,8 +60,6 @@ export class AuthController {
   @Post('request-reset')
   @HttpCode(200)
   async requestPasswordReset(@Body() data: RequestResetDto) {
-    // Nota: El DTO RequestResetDto debe mapear el campo (email)
-    // El microservicio enviará el correo
     return firstValueFrom(this.authClient.requestPasswordReset(data));
   }
 
@@ -74,7 +71,6 @@ export class AuthController {
   @Post('reset-password')
   @HttpCode(200)
   async resetPassword(@Body() data: ResetPasswordDto) {
-    // Nota: El DTO ResetPasswordDto debe mapear (token, newPassword)
     return firstValueFrom(this.authClient.resetPassword(data));
   }
 
