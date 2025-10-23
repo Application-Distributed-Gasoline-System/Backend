@@ -1,27 +1,49 @@
 version: '3'
-
+networks:
+  drivers-net:
+  vehicles-net:
+  auth-net:
+  monitoring-net:
 services:
   nats-server:
     image: nats:latest
     ports:
       - "4222:4222"
+    networks:
+      - drivers-net
+      - vehicles-net
+      - auth-net
 
   api-gateway:
     build: ./api-gateway
     ports:
-      - "3000:3000"
+      - "4000:4000"
     volumes:
       - ./api-gateway/src:/usr/src/app/src
       - ./proto:/usr/src/app/proto
     command: npm run start:dev
     environment:
-      - PORT=3000
+      - PORT=4000
       - DRIVERS_MICROSERVICE_HOST=drivers-ms
       - DRIVERS_MICROSERVICE_PORT=5000
       - VEHICLES_MICROSERVICE_HOST=vehicles-ms
       - VEHICLES_MICROSERVICE_PORT=5001
       - AUTH_MICROSERVICE_HOST=auth-ms
       - AUTH_MICROSERVICE_PORT=5002 
+    depends_on:
+      - drivers-ms
+      - vehicles-ms
+      - auth-ms
+    networks:
+      - drivers-net
+      - vehicles-net
+      - auth-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: always
 
   drivers-ms:
     build: ./drivers-ms
@@ -36,6 +58,17 @@ services:
       - NATS_SERVERS=nats://nats-server:4222
     depends_on:
       - nats-server
+    ports:
+      - "5000:5000"
+      - "9103:9103"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9103/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: always
+    networks:
+      - drivers-net
 
   vehicles-ms:
     build: ./vehicles-ms
@@ -47,6 +80,17 @@ services:
       - PORT=5001
       - HOST=0.0.0.0
       - DATABASE_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/vehiclesdb?sslmode=require&channel_binding=require
+    ports:
+      - "5001:5001"
+      - "9104:9104"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9104/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: always
+    networks:
+      - vehicles-net
 
   auth-ms:
     build: ./auth-ms
@@ -69,3 +113,46 @@ services:
       - NATS_SERVERS=nats://nats-server:4222
     depends_on:
       - nats-server
+    ports:
+      - "5002:5002"
+      - "9102:9102"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9102/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: always
+    networks:
+      - auth-net
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - drivers-ms
+      - vehicles-ms
+      - auth-ms
+    networks:
+      - drivers-net
+      - vehicles-net
+      - auth-net
+      - monitoring-net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+     - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+     - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - monitoring-net
