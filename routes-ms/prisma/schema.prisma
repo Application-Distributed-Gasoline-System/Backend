@@ -13,8 +13,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-
 enum RouteStatus {
   PLANNED
   IN_PROGRESS
@@ -22,40 +20,49 @@ enum RouteStatus {
   CANCELLED
 }
 
+enum TipoMaquinaria {
+  LIVIANA
+  PESADA
+}
 
 model Route {
-  id             Int             @id @default(autoincrement())
-  code           String          @unique
-  origin         String
-  destination    String
-  distanceKm     Float
-  estimatedFuelL Float?          
-  status         RouteStatus     @default(PLANNED)
-  scheduledAt    DateTime?
-  driverId       String
-  vehicleId      Int
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id               Int             @id @default(autoincrement())
+  code             String          @unique
+  origin           String
+  destination      String
+  distanceKm       Float
+  tipoMaquinaria   TipoMaquinaria
+  estimatedFuelL   Float?
+  actualFuelL      Float?
+  status           RouteStatus     @default(PLANNED)
+  scheduledAt      DateTime?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  driverId         String
+  vehicleId        Int
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
-  // relaciones
-  driver         DriverRef   @relation(fields: [driverId], references: [id])
-  vehicle        VehicleRef  @relation(fields: [vehicleId], references: [id])
+  driver           DriverRef       @relation(fields: [driverId], references: [id])
+  vehicle          VehicleRef      @relation(fields: [vehicleId], references: [id])
 }
 
 model DriverRef {
-  id     String   @id
-  name   String?
+  id             String   @id
+  name           String?
+  tipoLicencia   TipoMaquinaria
+  isAvailable    Boolean  @default(true)
 
-  //isAvailable  Boolean @default(false)
-
-  // relación inversa
   routes Route[]
 }
 
 model VehicleRef {
-  id     Int     @id
-  plate  String?
+  id             Int      @id
+  plate          String?
+  tipoMaquinaria TipoMaquinaria
+  rendimientoKmL Float?
+  estado         String?
 
-  // relación inversa
   routes Route[]
 }
+

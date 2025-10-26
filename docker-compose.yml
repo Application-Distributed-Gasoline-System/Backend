@@ -146,9 +146,9 @@ services:
       - nats-server
     ports:
       - "5003:5003"
-      - "9101:9101"
+      - "9105:9105"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9101/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:9105/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -181,8 +181,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-     - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
-     - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
     depends_on:
       - prometheus
     environment:
@@ -190,3 +190,11 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     networks:
       - monitoring-net
+
+  autoheal:
+    image: willfarrell/autoheal
+    restart: always
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=all
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

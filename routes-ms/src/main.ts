@@ -1,10 +1,31 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Logger, Module, Res, ValidationPipe } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { envs } from './config';
+import type { Response } from 'express';
+import { collectDefaultMetrics, Registry } from 'prom-client';
+const register = new Registry();
+collectDefaultMetrics({ register });
+@Controller()
+class HealthMetricsController {
+  @Get('health')
+  getHealth() {
+    return { status: 'ok', service: 'vehicles-ms', timestamp: new Date() };
+  }
 
+  @Get('metrics')
+  async getMetrics(@Res() res: Response) {
+    const metrics = await register.metrics();
+    res.setHeader('Content-Type', register.contentType);
+    res.send(metrics);
+  }
+}
+@Module({
+  controllers: [HealthMetricsController],
+})
+class HealthMetricsModule { }
 async function bootstrap() {
   const logger = new Logger('Main');
 
@@ -33,9 +54,9 @@ async function bootstrap() {
 
   logger.log(`✅ Routes microservice listening via gRPC (${envs.host}:${envs.port}) and NATS`);
 
-  //const httpApp = await NestFactory.create(HealthMetricsModule);
-  //await httpApp.listen(9103, '0.0.0.0');
-  //console.log(`📊 Metrics + Health HTTP server on port 9103`);
+  const httpApp = await NestFactory.create(HealthMetricsModule);
+  await httpApp.listen(9105, '0.0.0.0');
+  console.log(`📊 Metrics + Health HTTP server on port 9105`);
 
 }
 bootstrap();

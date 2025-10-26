@@ -21,3 +21,7 @@ scrape_configs:
     metrics_path: /api/metrics
     static_configs:
       - targets: ['api-gateway:4000']
+  - job_name: 'routes-ms'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['routes-ms:9105']
