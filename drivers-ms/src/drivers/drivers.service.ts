@@ -60,15 +60,18 @@ export class DriversService extends PrismaClient implements OnModuleInit {
     return driver;
   }
 
+  //Creacion de driver desde driver-ms
   async createDriver(data: CreateDriverDto) {
-    const driver = this.driver.create({ data });
-    //await this.natsClient.emit('driver.created', driver); // <--- evento NATS de crear
-    // Si no ocurre ningun error mientras hace lo que tenga que hacer el microservicio retorna los conductores
+    const driver = await this.driver.create({ data });
+    await this.natsClient.emit('drivers.driver.created', {
+      id: driver.id,
+      name: driver.name
+    });
     return driver;
   }
 
+
   async createFromAuth(data: { userId: string; email: string; name: string }) {
-    this.logger.log(`Creando driver desde Auth: ${JSON.stringify(data)}`);
 
     const existing = await this.driver.findUnique({
       where: { userId: data.userId },
@@ -86,14 +89,19 @@ export class DriversService extends PrismaClient implements OnModuleInit {
       },
     });
 
+    await this.natsClient.emit('drivers.driver.created', {
+      id: driver.id,
+      name: driver.name,
+    });
+
     this.logger.log(`Driver creado: ${driver.id}`);
     return driver;
   }
 
   async updateDriver(id: string, data: UpdateDriverDto) {
-    const driver = this.driver.update({ where: { id }, data });
-    //await this.natsClient.emit('driver.update', driver); // <--- evento NATS de actualizar
-    return driver; // Si no ocurre ningun error mientras hace lo que tenga que hacer el microservicio retorna los conductores
+    const driver = await this.driver.update({ where: { id }, data });
+    await this.natsClient.emit('drivers.driver.update', driver);
+    return driver;
   }
 
   async deleteDriver(id: string) {
@@ -105,8 +113,13 @@ export class DriversService extends PrismaClient implements OnModuleInit {
         message: `Driver with id: ${id} not found`,
       });
 
-    //await this.natsClient.emit('driver.delete', driver); // <--- evento NATS de actualizar
-    return this.driver.delete({ where: { id } }); // Si no ocurre ningun error mientras hace lo que tenga que hacer el microservicio retorna los conductores
+    const deletedDriver = await this.driver.delete({ where: { id } });
+    try {
+      await this.natsClient.emit('drivers.driver.delete', deletedDriver.id);
+    } catch (err) {
+      this.logger.error(`Error al emitir evento NATS driver.delete: ${err.message}`);
+    }
+    return deletedDriver;
   }
   // Actualiza la disponibilidad del conductor
   async updateDriverAvailability(userId: string, active: boolean) {
@@ -122,6 +135,12 @@ export class DriversService extends PrismaClient implements OnModuleInit {
     });
 
     this.logger.log(`Driver ${driver.id} disponibilidad actualizada a ${active}`);
+
+    // this.natsClient.emit('drivers.driver.availability.updated', {
+    //   driverId: driver.id,
+    //   userId: driver.userId,
+    //   isAvailable: active,
+    // });
   }
 
   // Actualiza el nombre del conductor
@@ -132,12 +151,17 @@ export class DriversService extends PrismaClient implements OnModuleInit {
       return;
     }
 
-    await this.driver.update({
+    const updated = await this.driver.update({
       where: { userId },
       data: { name },
     });
 
     this.logger.log(`Driver ${driver.id} nombre actualizado a ${name}`);
+
+    this.natsClient.emit('drivers.driver.name.updated', {
+      id: updated.id,
+      name: updated.name,
+    });
   }
 
   // Eliminar conductor usando userId 
@@ -149,7 +173,12 @@ export class DriversService extends PrismaClient implements OnModuleInit {
       return;
     }
 
-    await this.driver.delete({ where: { userId } });
-    this.logger.log(`Driver con userId ${userId} eliminado correctamente`);
+    const deletedDriver = await this.driver.delete({ where: { userId } });
+    try {
+      await this.natsClient.emit('drivers.driver.delete', deletedDriver.id);
+    } catch (err) {
+      this.logger.error(`Error al emitir evento NATS driver.delete: ${err.message}`);
+    }
+    return deletedDriver;
   }
 }

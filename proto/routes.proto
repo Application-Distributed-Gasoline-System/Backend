@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package routes;
+
+service RouteService {
+  rpc GetAllRoutes (GetAllRoutesRequest) returns (GetAllRoutesResponse);
+  rpc GetRouteById (RouteByIdRequest) returns (RouteResponse);
+  rpc CreateRoute (CreateRouteRequest) returns (RouteResponse);
+  rpc UpdateRoute (UpdateRouteRequest) returns (RouteResponse);
+  rpc DeleteRoute (RouteByIdRequest) returns (RouteResponse);
+}
+
+// ======== Requests ========
+
+message GetAllRoutesRequest {
+  int32 page = 1;
+  int32 limit = 2;
+}
+
+message RouteByIdRequest {
+  int32 id = 1;
+}
+
+message CreateRouteRequest {
+  string code = 1;
+  string origin = 2;
+  string destination = 3;
+  float distanceKm = 4;
+  float estimatedFuelL = 5;
+  string status = 6;          // Enum: PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
+  string scheduledAt = 7;     // ISO 8601 date string
+  string driverId = 8;
+  int32 vehicleId = 9;
+}
+
+message UpdateRouteRequest {
+  int32 id = 1;
+  string code = 2;
+  string origin = 3;
+  string destination = 4;
+  float distanceKm = 5;
+  float estimatedFuelL = 6;
+  string status = 7;
+  string scheduledAt = 8;
+  string driverId = 9;
+  int32 vehicleId = 10;
+}
+
+// ======== Responses ========
+
+message RouteResponse {
+  int32 id = 1;
+  string code = 2;
+  string origin = 3;
+  string destination = 4;
+  float distanceKm = 5;
+  float estimatedFuelL = 6;
+  string status = 7;
+  string scheduledAt = 8;
+  string driverId = 9;
+  string driverName = 10;      // Para mostrar la copia local
+  int32 vehicleId = 11;
+  string vehiclePlate = 12;    // Para mostrar la copia local
+  string createdAt = 13;
+  string updatedAt = 14;
+  string message = 15;
+}
+
+message GetAllRoutesResponse {
+  repeated RouteResponse routes = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 totalPages = 4;
+}

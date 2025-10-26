@@ -1,0 +1,81 @@
+import { Controller } from '@nestjs/common';
+import { EventPattern, GrpcMethod, MessagePattern, Payload } from '@nestjs/microservices';
+import { RoutesService } from './routes.service';
+import { CreateRouteDto } from './dto/create-route.dto';
+import { UpdateRouteDto } from './dto/update-route.dto';
+import { PaginationDto } from 'src/common';
+
+@Controller()
+export class RoutesController {
+  constructor(private readonly routesService: RoutesService) { }
+
+  //Nats
+
+  @EventPattern('drivers.driver.created')
+  async handleDriverCreated(@Payload() data: { id: string; name: string}) {
+    await this.routesService.createDriverRef(data);
+  }
+
+  @EventPattern('drivers.driver.update')
+  async handleDriverUpdated(@Payload() data: { id: string; name: string }) {
+    await this.routesService.updateDriverRef(data);
+  }
+
+  @EventPattern('drivers.driver.delete')
+  async handleDriverDeleted(@Payload() data: { id: string }) {
+    await this.routesService.deleteDriverRef(data.id);
+  }
+
+  @EventPattern('drivers.driver.name.updated')
+  async handleDriverNameUpdated(@Payload() data: { id: string; name: string }) {
+    await this.routesService.updateDriverNameRef(data);
+  }
+
+  // @EventPattern('drivers.driver.status.updated')
+  // async handleDriverStatusUpdated(@Payload() data: { id: string; isAvailable: boolean }) {
+  //   await this.routesService.updateDriverStatusRef(data);
+  // }
+
+  //Metodos del microservicio de  rutas
+
+  @GrpcMethod('RouteService', 'CreateRouteRequest')
+  async createRoute(createRouteDto: CreateRouteDto) {
+    const route = await this.routesService.createRoute(createRouteDto);
+    return { ...route, message: 'Creado' };
+  }
+
+  @GrpcMethod('RouteService', 'GetAllRoutesRequest')
+  async findAllRoutes(data: PaginationDto) {
+    const response = await this.routesService.findAllRoutes(data);
+    return {
+      routes: response.data,
+      total: response.total,
+      page: response.page,
+      totalPages: response.totalPages,
+    };
+  }
+
+  @GrpcMethod('RouteService', 'RouteByIdRequest')
+  async findOneRoute(data: { id: number }) {
+    const route = await this.routesService.findOneRoute(data.id);
+    return (
+      route || { id: '', name: '', license: '', message: 'No encontrado' }
+    );
+  }
+
+  @GrpcMethod('RouteService', 'UpdateRouteRequest')
+  async updateRoute(updateRouteDto: UpdateRouteDto & { id: number }) {
+    const route = await this.routesService.updateRoute(updateRouteDto.id, updateRouteDto);
+    return route
+      ? { ...route, message: 'Actualizado' }
+      : { id: '', name: '', license: '', message: 'No encontrado' };
+  }
+
+  @GrpcMethod('RouteService', 'RouteByIdRequest')
+  async removeRoute(data: { id: number }) {
+    const route = await this.routesService.removeRoute(data.id);
+    return route
+      ? { ...route, message: 'Eliminado' }
+      : { id: '', name: '', license: '', message: 'No encontrado' };
+  }
+}
