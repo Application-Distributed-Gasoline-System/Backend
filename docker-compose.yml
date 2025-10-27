@@ -86,6 +86,7 @@ services:
       - PORT=5001
       - HOST=0.0.0.0
       - DATABASE_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/vehiclesdb?sslmode=require&channel_binding=require
+      - NATS_SERVERS=nats://nats-server:4222
     ports:
       - "5001:5001"
       - "9104:9104"

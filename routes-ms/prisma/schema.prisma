@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -20,49 +14,73 @@ enum RouteStatus {
   CANCELLED
 }
 
-enum TipoMaquinaria {
-  LIVIANA
-  PESADA
+enum MachineryType {
+  LIGHT
+  HEAVY
+}
+
+enum EngineType {
+  GASOLINE
+  DIESEL
+  ELECTRIC
+  HYBRID
+}
+
+enum License {
+  C
+  D
+  E
+  G
+}
+
+enum VehicleStatus {
+  OPERATIONAL
+  UNDER_MAINTENANCE
+  OUT_OF_SERVICE
 }
 
 model Route {
-  id               Int             @id @default(autoincrement())
-  code             String          @unique
-  origin           String
-  destination      String
-  distanceKm       Float
-  tipoMaquinaria   TipoMaquinaria
-  estimatedFuelL   Float?
-  actualFuelL      Float?
-  status           RouteStatus     @default(PLANNED)
-  scheduledAt      DateTime?
-  startedAt        DateTime?
-  completedAt      DateTime?
-  driverId         String
-  vehicleId        Int
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  id             Int           @id @default(autoincrement())
+  code           String        @unique
+  origin         String
+  destination    String
+  distanceKm     Float
+  machineryType  MachineryType
+  estimatedFuelL Float?
+  actualFuelL    Float?
+  status         RouteStatus   @default(PLANNED)
+  scheduledAt    DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  driverId       String
+  vehicleId      Int
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
-  driver           DriverRef       @relation(fields: [driverId], references: [id])
-  vehicle          VehicleRef      @relation(fields: [vehicleId], references: [id])
+  driver  DriverRef  @relation(fields: [driverId], references: [id])
+  vehicle VehicleRef @relation(fields: [vehicleId], references: [id])
 }
 
 model DriverRef {
-  id             String   @id
-  name           String?
-  tipoLicencia   TipoMaquinaria
-  isAvailable    Boolean  @default(true)
+  id          String  @id
+  name        String?
+  license     License?
+  isAvailable Boolean @default(true)
 
   routes Route[]
 }
 
 model VehicleRef {
-  id             Int      @id
-  plate          String?
-  tipoMaquinaria TipoMaquinaria
-  rendimientoKmL Float?
-  estado         String?
+  id                 Int           @id
+  plate              String
+  engineType         EngineType
+  machineryType      MachineryType
+  tankCapacity       Float
+  engineDisplacement Float
+  averageConsumption Float
+  mileage            Float
+  available          Boolean
+  status             VehicleStatus
 
   routes Route[]
 }
-

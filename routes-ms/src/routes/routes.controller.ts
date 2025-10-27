@@ -1,5 +1,5 @@
 import { Controller } from '@nestjs/common';
-import { EventPattern, GrpcMethod, MessagePattern, Payload } from '@nestjs/microservices';
+import { EventPattern, GrpcMethod, Payload } from '@nestjs/microservices';
 import { RoutesService } from './routes.service';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
@@ -9,20 +9,39 @@ import { PaginationDto } from 'src/common';
 export class RoutesController {
   constructor(private readonly routesService: RoutesService) { }
 
-  //Nats
+  ///////// NATS ///////////
 
+  //VEHICLES
+  @EventPattern('vehicle.created')
+  async handleVehicleCreated(@Payload() data) {
+    await this.routesService.createVehicleRef(data);
+  }
+
+  @EventPattern('vehicle.updated')
+  async handleVehicleUpdated(@Payload() data) {
+    await this.routesService.updateVehicleRef(data);
+  }
+
+  @EventPattern('vehicle.deleted')
+  async handleVehicleDeleted(@Payload() data: { id: number}) {
+    await this.routesService.deleteVehicleRef(data.id);
+  }
+
+
+
+  // DRIVERS
   @EventPattern('drivers.driver.created')
-  async handleDriverCreated(@Payload() data: { id: string; name: string}) {
+  async handleDriverCreated(@Payload() data) {
     await this.routesService.createDriverRef(data);
   }
 
   @EventPattern('drivers.driver.update')
-  async handleDriverUpdated(@Payload() data: { id: string; name: string }) {
+  async handleDriverUpdated(@Payload() data) {
     await this.routesService.updateDriverRef(data);
   }
 
   @EventPattern('drivers.driver.delete')
-  async handleDriverDeleted(@Payload() data: { id: string }) {
+  async handleDriverDeleted(@Payload() data) {
     await this.routesService.deleteDriverRef(data.id);
   }
 
@@ -31,12 +50,14 @@ export class RoutesController {
     await this.routesService.updateDriverNameRef(data);
   }
 
-  // @EventPattern('drivers.driver.status.updated')
-  // async handleDriverStatusUpdated(@Payload() data: { id: string; isAvailable: boolean }) {
-  //   await this.routesService.updateDriverStatusRef(data);
-  // }
+  @EventPattern('drivers.driver.availability.updated')
+  async handleDriverStatusUpdated(@Payload() data: { id: string; isAvailable: boolean }) {
+    await this.routesService.updateDriverStatusRef(data);
+  }
 
-  //Metodos del microservicio de  rutas
+
+
+  ////// Metodos del microservicio de  rutas /////
 
   @GrpcMethod('RouteService', 'CreateRouteRequest')
   async createRoute(createRouteDto: CreateRouteDto) {

@@ -1,5 +1,4 @@
 import {
-  HttpStatus,
   Inject,
   Injectable,
   Logger,
@@ -63,10 +62,7 @@ export class DriversService extends PrismaClient implements OnModuleInit {
   //Creacion de driver desde driver-ms
   async createDriver(data: CreateDriverDto) {
     const driver = await this.driver.create({ data });
-    await this.natsClient.emit('drivers.driver.created', {
-      id: driver.id,
-      name: driver.name
-    });
+    await this.natsClient.emit('drivers.driver.created', { driver });
     return driver;
   }
 
@@ -86,12 +82,14 @@ export class DriversService extends PrismaClient implements OnModuleInit {
       data: {
         userId: data.userId,
         name: data.name,
+        email: data.email
       },
     });
-
     await this.natsClient.emit('drivers.driver.created', {
       id: driver.id,
       name: driver.name,
+      license: driver.license ?? null,
+      isAvailable: driver.isAvailable,
     });
 
     this.logger.log(`Driver creado: ${driver.id}`);
@@ -100,7 +98,12 @@ export class DriversService extends PrismaClient implements OnModuleInit {
 
   async updateDriver(id: string, data: UpdateDriverDto) {
     const driver = await this.driver.update({ where: { id }, data });
-    await this.natsClient.emit('drivers.driver.update', driver);
+    await this.natsClient.emit('drivers.driver.update', {
+      id: driver.id,
+      name: driver.name,
+      license: driver.license ?? null,
+      //isAvailable: driver.isAvailable,
+    });
     return driver;
   }
 
@@ -115,7 +118,7 @@ export class DriversService extends PrismaClient implements OnModuleInit {
 
     const deletedDriver = await this.driver.delete({ where: { id } });
     try {
-      await this.natsClient.emit('drivers.driver.delete', deletedDriver.id);
+      await this.natsClient.emit('drivers.driver.delete', { id: deletedDriver.id });
     } catch (err) {
       this.logger.error(`Error al emitir evento NATS driver.delete: ${err.message}`);
     }
@@ -136,11 +139,10 @@ export class DriversService extends PrismaClient implements OnModuleInit {
 
     this.logger.log(`Driver ${driver.id} disponibilidad actualizada a ${active}`);
 
-    // this.natsClient.emit('drivers.driver.availability.updated', {
-    //   driverId: driver.id,
-    //   userId: driver.userId,
-    //   isAvailable: active,
-    // });
+    this.natsClient.emit('drivers.driver.availability.updated', {
+      id: driver.id,
+      isAvailable: active,
+    });
   }
 
   // Actualiza el nombre del conductor
@@ -175,7 +177,7 @@ export class DriversService extends PrismaClient implements OnModuleInit {
 
     const deletedDriver = await this.driver.delete({ where: { userId } });
     try {
-      await this.natsClient.emit('drivers.driver.delete', deletedDriver.id);
+      await this.natsClient.emit('drivers.driver.delete', { id: deletedDriver.id });
     } catch (err) {
       this.logger.error(`Error al emitir evento NATS driver.delete: ${err.message}`);
     }

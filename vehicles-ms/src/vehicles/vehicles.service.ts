@@ -1,5 +1,5 @@
-import { HttpStatus, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { RpcException } from '@nestjs/microservices';
+import { HttpStatus, Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { PrismaClient } from '@prisma/client';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
@@ -9,6 +9,12 @@ import { GrpcStatus, PaginationDto } from 'src/common';
 @Injectable()
 export class VehiclesService extends PrismaClient implements OnModuleInit {
   private readonly logger = new Logger('VehiclesService');
+
+  constructor(
+    @Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
+  ) {
+    super();
+  }
 
   async onModuleInit() {
     try {
@@ -74,17 +80,29 @@ export class VehiclesService extends PrismaClient implements OnModuleInit {
       ),
     };
 
-    return this.vehicle.create({ data: vehicleData });
+    const createdVehicle = await this.vehicle.create({ data: vehicleData });
+
+    this.natsClient.emit('vehicle.created', createdVehicle);
+
+    return createdVehicle;
   }
 
   async updateVehicle(id: number, data: UpdateVehicleDto) {
-    return this.vehicle.update({
+    const updatedVehicle = await this.vehicle.update({
       where: { id },
       data,
     });
+
+    this.natsClient.emit('vehicle.updated', updatedVehicle);
+
+    return updatedVehicle;
   }
 
   async deleteVehicle(id: number) {
-    return this.vehicle.delete({ where: { id } });
+    const deletedVehicle = await this.vehicle.delete({ where: { id } });
+
+    this.natsClient.emit('vehicle.deleted', deletedVehicle);
+
+    return deletedVehicle;
   }
 }
