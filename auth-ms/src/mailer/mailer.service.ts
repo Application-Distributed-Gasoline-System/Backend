@@ -14,7 +14,7 @@ export class MailerService {
 
   async sendPasswordResetLink(email: string, resetToken: string) {
     // Obtener la URL del frontend de la configuración (debes añadir FRONTEND_URL a tu .env)
-    const frontendBaseUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const frontendBaseUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3001';
     const resetUrl = `${frontendBaseUrl}/reset-password?token=${resetToken}`;
 
     await this.nestMailerService.sendMail({
@@ -29,7 +29,7 @@ export class MailerService {
   }
   async sendWelcomeEmail(params: { to: string; name: string; email: string; password: string }) {
     const { to, name, email, password } = params;
-    const frontendBaseUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const frontendBaseUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3001';
     const loginUrl = `${frontendBaseUrl}/login`;
 
     await this.nestMailerService.sendMail({
