@@ -14,7 +14,124 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
     await this.$connect();
     this.logger.log('La base de datos esta conectada');
   }
+  private async validateDriverAndVehicleExistenceAndAvailability(
+    tx: any,
+    driverId: string,
+    vehicleId: number,
+    routeMachineryType: string,
+  ) {
+    const driver = await tx.driverRef.findUnique({ where: { id: driverId } });
+    const vehicle = await tx.vehicleRef.findUnique({ where: { id: vehicleId } });
 
+    if (!driver) {
+      throw new RpcException({
+        code: GrpcStatus.NOT_FOUND,
+        message: `El chofer con id ${driverId} no existe.`,
+      });
+    }
+
+    if (!vehicle) {
+      throw new RpcException({
+        code: GrpcStatus.NOT_FOUND,
+        message: `El vehículo con id ${vehicleId} no existe.`,
+      });
+    }
+
+    // Validar disponibilidad administrativa (vacaciones, mantenimiento, etc.)
+    if (!driver.isAvailable) {
+      throw new RpcException({
+        code: GrpcStatus.FAILED_PRECONDITION,
+        message: `El chofer ${driver.name} no está disponible administrativamente.`,
+      });
+    }
+
+    if (!vehicle.available) {
+      throw new RpcException({
+        code: GrpcStatus.FAILED_PRECONDITION,
+        message: `El vehículo ${vehicle.plate} no está disponible administrativamente.`,
+      });
+    }
+
+    // Validar compatibilidad de licencia y tipo de maquinaria
+    this.validateDriverVehicleCompatibility(driver, vehicle, routeMachineryType);
+
+    return { driver, vehicle };
+  }
+
+  private validateDriverVehicleCompatibility(driver: any, vehicle: any, routeMachineryType: string) {
+    const driverLicense = driver.license;
+    const vehicleType = vehicle.machineryType;
+    const heavyLicenses = ['D', 'E'];
+    const lightLicenses = ['C', 'D', 'E'];
+
+    let isDriverCompatible = false;
+
+    if (routeMachineryType === 'LIGHT') {
+      isDriverCompatible = lightLicenses.includes(driverLicense);
+    } else if (routeMachineryType === 'HEAVY') {
+      isDriverCompatible = heavyLicenses.includes(driverLicense);
+    }
+
+    if (!isDriverCompatible) {
+      throw new RpcException({
+        code: GrpcStatus.FAILED_PRECONDITION,
+        message: `El chofer ${driver.name} (Licencia: ${driverLicense}) no es apto para maquinaria de tipo ${routeMachineryType}.`,
+      });
+    }
+
+    if (vehicleType !== routeMachineryType) {
+      throw new RpcException({
+        code: GrpcStatus.FAILED_PRECONDITION,
+        message: `El vehículo ID ${vehicle.id} es de tipo ${vehicleType}, lo cual es incompatible con la ruta de tipo ${routeMachineryType}.`,
+      });
+    }
+  }
+
+  private async validateRouteAvailabilityByDate(
+    tx: any,
+    driverId: string,
+    vehicleId: number,
+    scheduledAt: Date | string | null | undefined,
+    excludeRouteId?: number,
+  ) {
+    const routeDate = scheduledAt ? new Date(scheduledAt) : new Date();
+    const startOfDay = new Date(routeDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(routeDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const commonWhere = {
+      scheduledAt: { gte: startOfDay, lte: endOfDay },
+      status: { notIn: ['CANCELLED', 'COMPLETED'] },
+      ...(excludeRouteId && { id: { not: excludeRouteId } }),
+    };
+
+    // Verificar rutas existentes del chofer en esa fecha
+    const driverHasRoute = await tx.route.findFirst({
+      where: { ...commonWhere, driverId },
+      include: { driver: true },
+    });
+
+    if (driverHasRoute) {
+      throw new RpcException({
+        code: GrpcStatus.FAILED_PRECONDITION,
+        message: `El chofer ${driverHasRoute.driver.name} ya tiene una ruta asignada para esa fecha (${routeDate.toISOString().split('T')[0]}).`,
+      });
+    }
+
+    // Verificar rutas existentes del vehículo en esa fecha
+    const vehicleHasRoute = await tx.route.findFirst({
+      where: { ...commonWhere, vehicleId },
+      include: { vehicle: true },
+    });
+
+    if (vehicleHasRoute) {
+      throw new RpcException({
+        code: GrpcStatus.FAILED_PRECONDITION,
+        message: `El vehículo ${vehicleHasRoute.vehicle.plate} ya tiene una ruta asignada para esa fecha (${routeDate.toISOString().split('T')[0]}).`,
+      });
+    }
+  }
 
   /////// NATS //////
 
@@ -48,7 +165,7 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
       this.logger.error(`Error creando VehicleRef: ${error.message}`);
       throw new RpcException({
         code: GrpcStatus.INTERNAL,
-        message: `Error creando VehicleRed: ${error.message}`,
+        message: `Error creando VehicleRef: ${error.message}`,
       });
     }
   }
@@ -108,7 +225,7 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
 
 
   // DRIVERS
-  async createDriverRef(data : { id: string; name: string; license: any; isAvailable : boolean  }) {
+  async createDriverRef(data: { id: string; name: string; license: any; isAvailable: boolean }) {
     try {
       const existing = await this.driverRef.findUnique({ where: { id: data.id } });
       if (existing) {
@@ -136,7 +253,7 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
     }
   }
 
-  async updateDriverRef(data : { id: string; name: string; license: any; isAvailable : boolean  }) {
+  async updateDriverRef(data: { id: string; name: string; license: any; isAvailable: boolean }) {
     try {
       const driverRef = await this.driverRef.findUnique({ where: { id: data.id } });
       if (!driverRef) {
@@ -234,50 +351,218 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
   //Propios del microservicio Rutas
 
   async createRoute(data: CreateRouteDto) {
-    const route = await this.route.create({ data });
-    return route
+    return this.$transaction(async (tx) => {
+      const { driver, vehicle } =
+        await this.validateDriverAndVehicleExistenceAndAvailability(
+          tx,
+          data.driverId,
+          data.vehicleId,
+          data.machineryType,
+        );
+
+      await this.validateRouteAvailabilityByDate(
+        tx,
+        data.driverId,
+        data.vehicleId,
+        data.scheduledAt,
+      );
+
+      // Generar código único
+      const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const randomPart = Math.floor(1000 + Math.random() * 9000);
+      const code = `RT-${vehicle.machineryType[0]}-${datePart}-${randomPart}`;
+
+      // Calcular consumo estimado
+      const estimatedFuelL =
+        data.estimatedFuelL ??
+        Number(data.distanceKm * vehicle.averageConsumption);
+
+      // Crear ruta
+      const route = await tx.route.create({
+        data: {
+          code,
+          origin: data.origin,
+          destination: data.destination,
+          distanceKm: data.distanceKm,
+          machineryType: data.machineryType,
+          estimatedFuelL,
+          scheduledAt: data.scheduledAt,
+          driverId: data.driverId,
+          vehicleId: data.vehicleId,
+          status: 'PLANNED',
+        },
+      });
+
+      return route;
+    });
   }
 
   async findAllRoutes(paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;
-
     const skip = (page - 1) * limit;
 
-    const [data, total] = await Promise.all([
-      this.route.findMany({
-        skip,
-        take: limit,
-        //orderBy: { createdAt: 'desc'},
-      }),
-      this.route.count(),
-    ]);
+    try {
+      const [data, total] = await Promise.all([
+        this.route.findMany({
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          include: { driver: true, vehicle: true },
+        }),
+        this.route.count(),
+      ]);
 
-    return {
-      data,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-    };
+      return {
+        routes: data,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      this.logger.error(`Error listando rutas: ${error.message}`);
+      throw new RpcException({
+        code: GrpcStatus.INTERNAL,
+        message: 'Error al listar rutas',
+      });
+    }
   }
 
-  findOneRoute(id: number) {
-    return `This action returns a #${id} route`;
-  }
-
-  updateRoute(id: number, data: UpdateRouteDto) {
-    const route = this.route.update({ where: { id }, data });
-    return route
-  }
-
-  async removeRoute(id: number) {
-    const route = await this.route.findUnique({ where: { id } });
+  async findOneRoute(id: number) {
+    const route = await this.route.findUnique({
+      where: { id },
+      include: { driver: true, vehicle: true },
+    });
 
     if (!route)
       throw new RpcException({
         code: GrpcStatus.NOT_FOUND,
-        message: `Route with id: ${id} not found`,
+        message: `Ruta con ID ${id} no encontrada`,
       });
 
-    return this.route.delete({ where: { id } });
+    return route;
+  }
+
+  async updateRoute(id: number, data: UpdateRouteDto) {
+    // 1. Verificar existencia de la ruta a actualizar
+    const existing: any = await this.route.findUnique({
+      where: { id },
+      include: { driver: true, vehicle: true },
+    });
+
+    if (!existing) {
+      throw new RpcException({
+        code: GrpcStatus.NOT_FOUND,
+        message: `Ruta con ID ${id} no encontrada`,
+      });
+    }
+    return this.$transaction(async (tx) => {
+
+      this.logger.log(`Actualizando ruta ID ${id} - Datos: ${JSON.stringify(data)}`);
+      console.log(`Actualizando ruta ID ${id} - Datos: ${JSON.stringify(data)}`);
+      // 2. No permitir actualizar rutas en progreso o completadas/canceladas si se cambia driver/vehicle
+      if (existing.status === 'IN_PROGRESS' || existing.status === 'COMPLETED' || existing.status === 'CANCELLED') {
+        if (data.driverId || data.vehicleId || data.scheduledAt) {
+          throw new RpcException({
+            code: GrpcStatus.FAILED_PRECONDITION,
+            message: `No se permite cambiar chofer, vehículo o fecha para rutas en estado ${existing.status}.`,
+          });
+        }
+      }
+
+      // 3. Determinar el Chofer y Vehículo final para la ruta
+      const newDriverId = data.driverId ?? existing.driverId;
+      const newVehicleId = data.vehicleId ?? existing.vehicleId;
+      const newScheduledAt = data.scheduledAt ?? existing.scheduledAt;
+
+      // 4. Validar las nuevas referencias (existencia, disponibilidad, compatibilidad)
+      const finalMachineryType = data.machineryType ?? existing.machineryType;
+      const { driver, vehicle } =
+        await this.validateDriverAndVehicleExistenceAndAvailability(
+          tx,
+          newDriverId,
+          newVehicleId,
+          finalMachineryType,
+        );
+
+      // 5. Validar disponibilidad de ruta por fecha para el nuevo chofer/vehículo
+      await this.validateRouteAvailabilityByDate(
+        tx,
+        newDriverId,
+        newVehicleId,
+        newScheduledAt,
+        id, // Excluir el ID de la ruta que estamos actualizando
+      );
+
+      // 6. Preparar datos de actualización
+      const updateData: any = { ...data };
+
+      // Lógica específica para el consumo real (solo al completar)
+      if (data.status === 'COMPLETED' && data.actualFuelL != null) {
+        updateData.actualFuelL = data.actualFuelL;
+      } else {
+        delete updateData.actualFuelL;
+      }
+
+      // Usamos el valor que se enviaría o el existente, para el cálculo
+      const currentDistanceKm = data.distanceKm ?? existing.distanceKm;
+
+      // Verificamos si hubo un cambio en la distancia o en el vehículo
+      const distanceChanged = data.distanceKm !== undefined && data.distanceKm !== existing.distanceKm;
+      const vehicleChanged = data.vehicleId !== undefined && data.vehicleId !== existing.vehicleId;
+
+      const shouldRecalculate =
+        (distanceChanged || vehicleChanged) ||
+        (data.estimatedFuelL === undefined || data.estimatedFuelL === null || data.estimatedFuelL === 0);
+
+      if (!distanceChanged && !vehicleChanged && shouldRecalculate) {
+        delete updateData.estimatedFuelL;
+      }
+      else if (shouldRecalculate) {
+        if (data.estimatedFuelL === undefined || data.estimatedFuelL === null || data.estimatedFuelL === 0) {
+          if (vehicle.averageConsumption !== undefined && currentDistanceKm != null) {
+            const newEstimatedFuelL = Number(currentDistanceKm * vehicle.averageConsumption);
+            updateData.estimatedFuelL = newEstimatedFuelL;
+          }
+        }
+      }
+
+      const updated = await tx.route.update({
+        where: { id },
+        data: updateData,
+      });
+
+      return updated;
+    });
+  }
+
+
+  async removeRoute(id: number) {
+    return this.$transaction(async (tx) => {
+      const route = await tx.route.findUnique({
+        where: { id },
+        include: { driver: true, vehicle: true },
+      });
+
+      if (!route)
+        throw new RpcException({
+          code: GrpcStatus.NOT_FOUND,
+          message: `Ruta con ID ${id} no encontrada`,
+        });
+
+      await tx.route.delete({ where: { id } });
+
+      await tx.driverRef.update({
+        where: { id: route.driverId },
+        data: { isAvailable: true },
+      });
+
+      await tx.vehicleRef.update({
+        where: { id: route.vehicleId },
+        data: { available: true },
+      });
+
+      this.logger.log(`Ruta ${id} eliminada → Chofer y vehículo liberados`);
+      return { message: `Ruta ${id} eliminada correctamente` };
+    });
   }
 }

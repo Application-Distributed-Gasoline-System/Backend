@@ -22,19 +22,15 @@ message RouteByIdRequest {
 }
 
 message CreateRouteRequest {
-  string code = 1;
-  string origin = 2;
-  string destination = 3;
-  float distanceKm = 4;
-  string machineryType = 5;     // Enum: LIGHT, HEAVY
-  float estimatedFuelL = 6;
-  float actualFuelL = 7;
-  string status = 8;            // Enum: PLANNED, IN_PROGRESS, COMPLETED, CANCELLED
-  string scheduledAt = 9;       // ISO 8601 date string
-  string startedAt = 10;        // ISO 8601 date string
-  string completedAt = 11;      // ISO 8601 date string
-  string driverId = 12;
-  int32 vehicleId = 13;
+  string origin = 1;
+  string destination = 2;
+  float distanceKm = 3;
+  float estimatedFuelL = 4;
+  string status = 5;
+  string scheduledAt = 6;
+  string driverId = 7;
+  int32 vehicleId = 8;
+  string machineryType = 9;
 }
 
 message UpdateRouteRequest {

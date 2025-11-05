@@ -5,7 +5,7 @@ import { GrpcStatus } from './grpc-status.enum';
 
 @Catch(RpcException)
 export class RpcCustomExceptionFilter implements ExceptionFilter {
-    catch(exception: RpcException, host: ArgumentsHost) {
+  catch(exception: RpcException, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse();
 
@@ -14,6 +14,7 @@ export class RpcCustomExceptionFilter implements ExceptionFilter {
     // Transformar los codigo de exeption que manda el grcp y transformarlo a httpStatus
     const grpcToHttp: Record<number, number> = {
       [GrpcStatus.INVALID_ARGUMENT]: HttpStatus.BAD_REQUEST,
+      [GrpcStatus.FAILED_PRECONDITION]: HttpStatus.BAD_REQUEST,
       [GrpcStatus.NOT_FOUND]: HttpStatus.NOT_FOUND,
       [GrpcStatus.ALREADY_EXISTS]: HttpStatus.CONFLICT,
       [GrpcStatus.PERMISSION_DENIED]: HttpStatus.FORBIDDEN,

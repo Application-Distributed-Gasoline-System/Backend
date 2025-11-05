@@ -7,10 +7,10 @@ export interface RouteService {
   GetAllRoutes(data: { page: number; limit: number }): Observable<{ routes: any[]; total: number; page: number; totalPages: number }>;
   GetRouteById(data: { id: number }): Observable<any>;
   CreateRoute(data: {
-    code: string;
     origin: string;
     destination: string;
     distanceKm: number;
+    machineryType: string;
     estimatedFuelL?: number;
     status?: string;
     scheduledAt?: string;
@@ -36,7 +36,7 @@ export interface RouteService {
 export class RoutesClientService implements OnModuleInit {
   private routesService: RouteService;
 
-  constructor(@Inject(ROUTES_PACKAGE) private readonly client: ClientGrpc) {}
+  constructor(@Inject(ROUTES_PACKAGE) private readonly client: ClientGrpc) { }
 
   onModuleInit() {
     this.routesService = this.client.getService<RouteService>('RouteService');
@@ -51,10 +51,10 @@ export class RoutesClientService implements OnModuleInit {
   }
 
   createRoute(data: {
-    code: string;
     origin: string;
     destination: string;
     distanceKm: number;
+    machineryType: string;
     estimatedFuelL?: number;
     status?: string;
     scheduledAt?: string;

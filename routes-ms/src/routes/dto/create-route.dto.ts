@@ -7,17 +7,12 @@ export enum RouteStatus {
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
 }
-
 export enum MachineryType {
   LIGHT = 'LIGHT',
   HEAVY = 'HEAVY',
 }
 
 export class CreateRouteDto {
-  @IsString()
-  @IsNotEmpty()
-  code: string;
-
   @IsString()
   @IsNotEmpty()
   origin: string;
@@ -38,11 +33,6 @@ export class CreateRouteDto {
   @Type(() => Number)
   estimatedFuelL?: number;
 
-  @IsNumber()
-  @IsOptional()
-  @Type(() => Number)
-  actualFuelL?: number;
-
   @IsEnum(RouteStatus)
   @IsOptional()
   status?: RouteStatus;
@@ -50,14 +40,6 @@ export class CreateRouteDto {
   @IsDateString()
   @IsOptional()
   scheduledAt?: string;
-
-  @IsDateString()
-  @IsOptional()
-  startedAt?: string;
-
-  @IsDateString()
-  @IsOptional()
-  completedAt?: string;
 
   @IsString()
   @IsNotEmpty()

@@ -59,24 +59,24 @@ export class RoutesController {
 
   ////// Metodos del microservicio de  rutas /////
 
-  @GrpcMethod('RouteService', 'CreateRouteRequest')
+  @GrpcMethod('RouteService', 'CreateRoute')
   async createRoute(createRouteDto: CreateRouteDto) {
     const route = await this.routesService.createRoute(createRouteDto);
     return { ...route, message: 'Creado' };
   }
 
-  @GrpcMethod('RouteService', 'GetAllRoutesRequest')
+  @GrpcMethod('RouteService', 'GetAllRoutes')
   async findAllRoutes(data: PaginationDto) {
     const response = await this.routesService.findAllRoutes(data);
     return {
-      routes: response.data,
+      routes: response.routes,
       total: response.total,
       page: response.page,
       totalPages: response.totalPages,
     };
   }
 
-  @GrpcMethod('RouteService', 'RouteByIdRequest')
+  @GrpcMethod('RouteService', 'GetRouteById')
   async findOneRoute(data: { id: number }) {
     const route = await this.routesService.findOneRoute(data.id);
     return (
@@ -84,7 +84,7 @@ export class RoutesController {
     );
   }
 
-  @GrpcMethod('RouteService', 'UpdateRouteRequest')
+  @GrpcMethod('RouteService', 'UpdateRoute')
   async updateRoute(updateRouteDto: UpdateRouteDto & { id: number }) {
     const route = await this.routesService.updateRoute(updateRouteDto.id, updateRouteDto);
     return route
@@ -92,7 +92,7 @@ export class RoutesController {
       : { id: '', name: '', license: '', message: 'No encontrado' };
   }
 
-  @GrpcMethod('RouteService', 'RouteByIdRequest')
+  @GrpcMethod('RouteService', 'DeleteRoute')
   async removeRoute(data: { id: number }) {
     const route = await this.routesService.removeRoute(data.id);
     return route

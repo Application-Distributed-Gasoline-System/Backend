@@ -7,12 +7,12 @@ export enum RouteStatus {
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
 }
+export enum MachineryType {
+  LIGHT = 'LIGHT',
+  HEAVY = 'HEAVY',
+}
 
 export class CreateRouteDto {
-  @IsString()
-  @IsNotEmpty()
-  code: string;
-
   @IsString()
   @IsNotEmpty()
   origin: string;
@@ -24,6 +24,9 @@ export class CreateRouteDto {
   @IsNumber()
   @Type(() => Number)
   distanceKm: number;
+
+  @IsEnum(MachineryType)
+  machineryType: MachineryType;
 
   @IsNumber()
   @IsOptional()
