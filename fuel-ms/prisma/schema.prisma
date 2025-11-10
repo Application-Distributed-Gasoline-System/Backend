@@ -1,0 +1,36 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model FuelRecord {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  driverId      String   //@db.ObjectId
+  vehicleId     String   //@db.ObjectId
+  routeId       String?  //@db.ObjectId
+
+  liters        Float
+  fuelType      String
+  // Para separar por maquinaria liviana y pesada
+  machineryType String   // "light" | "heavy"
+  // Por si la empresa controla dispositivos IoT:
+  gpsLocation   String?
+
+  timestamp     DateTime @default(now())     // fecha creación
+  createdBy     String   //@db.ObjectId        // <── Guarda userId aquí
+  updatedAt     DateTime @updatedAt
+
+  // .... Mas campos y o relaciones si esque es necesario (En mongo no se hace migraciones es decir NO se debe hacer npx prisma migrate --dev)
+}
+

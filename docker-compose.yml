@@ -4,6 +4,7 @@ networks:
   vehicles-net:
   auth-net:
   routes-net:
+  fuel-net:
   monitoring-net:
 services:
   nats-server:
@@ -15,6 +16,7 @@ services:
       - vehicles-net
       - auth-net
       - routes-net
+      - fuel-net
 
   api-gateway:
     build: ./api-gateway
@@ -34,16 +36,20 @@ services:
       - AUTH_MICROSERVICE_PORT=5002 
       - ROUTES_MICROSERVICE_HOST=routes-ms
       - ROUTES_MICROSERVICE_PORT=5003 
+      - FUEL_MICROSERVICE_HOST=fuel-ms
+      - FUEL_MICROSERVICE_PORT=5004 
     depends_on:
       - drivers-ms
       - vehicles-ms
       - auth-ms
       - routes-ms
+      - fuel-ms
     networks:
       - drivers-net
       - vehicles-net
       - auth-net
       - routes-net
+      - fuel-net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4000/api/health"]
       interval: 30s
@@ -131,7 +137,6 @@ services:
     restart: always
     networks:
       - auth-net
-  
   routes-ms:
     build: ./routes-ms
     volumes:
@@ -157,6 +162,31 @@ services:
     networks:
       - routes-net
 
+  fuel-ms:
+    build: ./fuel-ms
+    volumes:
+      - ./fuel-ms/src:/usr/src/app/src
+      - ./proto:/usr/src/proto
+    command: npm run start:dev
+    environment:
+      - PORT=5004
+      - HOST=0.0.0.0
+      - DATABASE_URL=mongodb+srv://monteropablo511_db_user:sKLHAFAn3LQeX2m9@fuel-ms-db.anwzrhg.mongodb.net/fueldb
+      - NATS_SERVERS=nats://nats-server:4222
+    depends_on:
+      - nats-server
+    ports:
+      - "5004:5004"
+      - "9106:9106"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9106/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: always
+    networks:
+      - fuel-net
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -169,11 +199,13 @@ services:
       - vehicles-ms
       - auth-ms
       - routes-ms
+      - fuel-ms
     networks:
       - drivers-net
       - vehicles-net
       - auth-net
       - routes-net
+      - fuel-net
       - monitoring-net
 
   grafana:

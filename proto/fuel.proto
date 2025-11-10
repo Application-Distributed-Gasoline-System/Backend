@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package fuel;
+
+service FuelService {
+  rpc GetAllFuelRecords (GetAllFuelRecordsRequest) returns (GetAllFuelRecordsResponse);
+  rpc GetFuelRecordById (FuelRecordByIdRequest) returns (FuelRecordResponse);
+  rpc CreateFuelRecord (CreateFuelRecordRequest) returns (FuelRecordResponse);
+  rpc UpdateFuelRecord (UpdateFuelRecordRequest) returns (FuelRecordResponse);
+  rpc DeleteFuelRecord (FuelRecordByIdRequest) returns (FuelRecordResponse);
+
+  // Consultas adicionales útiles:
+  rpc GetFuelRecordsByDriver (FuelRecordsByDriverRequest) returns (GetAllFuelRecordsResponse);
+  rpc GetFuelRecordsByVehicle (FuelRecordsByVehicleRequest) returns (GetAllFuelRecordsResponse);
+}
+
+// ======== Requests ========
+
+message GetAllFuelRecordsRequest {
+  int32 page = 1;
+  int32 limit = 2;
+}
+
+message FuelRecordByIdRequest {
+  string id = 1;
+}
+
+message CreateFuelRecordRequest {
+  string driverId = 1;
+  string vehicleId = 2;
+  string routeId = 3;              // opcional
+  double liters = 4;
+  string fuelType = 5;             // diesel | gasolina
+  string machineryType = 6;        // light | heavy
+  string gpsLocation = 7;          // opcional
+  string userId = 8;               // quién registró (desde Auth)
+}
+
+message UpdateFuelRecordRequest {
+  string id = 1;
+  double liters = 2;
+  string fuelType = 3;
+  string machineryType = 4;
+  string gpsLocation = 5;
+  string routeId = 6;
+  string userId = 7;               // quién modificó
+}
+
+message FuelRecordsByDriverRequest {
+  string driverId = 1;
+  int32 page = 2;
+  int32 limit = 3;
+}
+
+message FuelRecordsByVehicleRequest {
+  string vehicleId = 1;
+  int32 page = 2;
+  int32 limit = 3;
+}
+
+// ======== Responses ========
+
+message FuelRecordResponse {
+  string id = 1;
+  string driverId = 2;
+  string vehicleId = 3;
+  string routeId = 4;
+  double liters = 5;
+  string fuelType = 6;
+  string machineryType = 7;
+  string gpsLocation = 8;
+  string timestamp = 9;
+  string createdBy = 10;
+  string updatedAt = 11;
+  string message = 12;
+}
+
+message GetAllFuelRecordsResponse {
+  repeated FuelRecordResponse records = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 totalPages = 4;
+}
