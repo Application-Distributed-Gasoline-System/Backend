@@ -1,37 +1,15 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { type ClientGrpc } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
-import { FUEL_PACKAGE } from 'src/config'; 
+import { FUEL_PACKAGE } from 'src/config';
+import { CreateFuelDto } from './dto/create-fuel.dto';
+import { ReportRequestDto } from './dto/report-request.dto';
 
 
 export interface FuelServiceGrpc {
-  GetAllFuelRecords(data: { page: number; limit: number }): Observable<any>;
-  GetFuelRecordById(data: { id: string }): Observable<any>;
-  CreateFuelRecord(data: {
-    driverId: string;
-    vehicleId: string;
-    routeId?: string;
-    liters: number;
-    fuelType: string;
-    machineryType: string;
-    gpsLocation?: string;
-    userId: string;
-  }): Observable<any>;
-
-  UpdateFuelRecord(data: {
-    id: string;
-    liters?: number;
-    fuelType?: string;
-    machineryType?: string;
-    gpsLocation?: string;
-    routeId?: string;
-    userId: string;
-  }): Observable<any>;
-
-  DeleteFuelRecord(data: { id: string }): Observable<any>;
-
-  GetFuelRecordsByDriver(data: { driverId: string; page: number; limit: number }): Observable<any>;
-  GetFuelRecordsByVehicle(data: { vehicleId: string; page: number; limit: number }): Observable<any>;
+  CreateFuel(data: { record: any }): Observable<any>;
+  GetByVehicle(data: { vehicleId: string; from?: string; to?: string }): Observable<any>;
+  GetReport(data: ReportRequestDto): Observable<any>;
 }
 
 // ====== Cliente ======
@@ -42,54 +20,20 @@ export class FuelClientService implements OnModuleInit {
 
   constructor(
     @Inject(FUEL_PACKAGE) private readonly client: ClientGrpc
-  ) {}
+  ) { }
 
   onModuleInit() {
     this.fuelService = this.client.getService<FuelServiceGrpc>('FuelService');
   }
 
-  getAllFuelRecords(page: number, limit: number) {
-    return this.fuelService.GetAllFuelRecords({ page, limit });
+  createFuelRecord(dto: CreateFuelDto) {
+    return this.fuelService.CreateFuel({ record: dto });
   }
 
-  getFuelRecordById(id: string) {
-    return this.fuelService.GetFuelRecordById({ id });
+  getFuelByVehicle(vehicleId: string, from?: string, to?: string) {
+    return this.fuelService.GetByVehicle({ vehicleId, from, to });
   }
-
-  createFuelRecord(data: {
-    driverId: string;
-    vehicleId: string;
-    routeId?: string;
-    liters: number;
-    fuelType: string;
-    machineryType: string;
-    gpsLocation?: string;
-    userId: string;
-  }) {
-    return this.fuelService.CreateFuelRecord(data);
-  }
-
-  updateFuelRecord(data: {
-    id: string;
-    liters?: number;
-    fuelType?: string;
-    machineryType?: string;
-    gpsLocation?: string;
-    routeId?: string;
-    userId: string;
-  }) {
-    return this.fuelService.UpdateFuelRecord(data);
-  }
-
-  deleteFuelRecord(id: string) {
-    return this.fuelService.DeleteFuelRecord({ id });
-  }
-
-  getFuelRecordsByDriver(driverId: string, page: number, limit: number) {
-    return this.fuelService.GetFuelRecordsByDriver({ driverId, page, limit });
-  }
-
-  getFuelRecordsByVehicle(vehicleId: string, page: number, limit: number) {
-    return this.fuelService.GetFuelRecordsByVehicle({ vehicleId, page, limit });
+  getFuelReport(dto: ReportRequestDto) {
+    return this.fuelService.GetReport(dto);
   }
 }

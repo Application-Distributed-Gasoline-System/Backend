@@ -12,7 +12,7 @@ collectDefaultMetrics({ register });
 class HealthMetricsController {
   @Get('health')
   getHealth() {
-    return { status: 'ok', service: 'vehicles-ms', timestamp: new Date() };
+    return { status: 'ok', service: 'routes-ms', timestamp: new Date() };
   }
 
   @Get('metrics')

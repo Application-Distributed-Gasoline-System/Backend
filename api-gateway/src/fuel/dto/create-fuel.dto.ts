@@ -1,29 +1,64 @@
-import { IsString, IsNumber, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsEnum, IsMongoId, IsISO8601 } from 'class-validator';
+
+export enum MachineryType {
+  LIGHT = 'LIGHT',
+  HEAVY = 'HEAVY',
+}
+
+export enum FuelSource {
+  MANUAL = "manual",
+  SENSOR = "sensor",
+  ROUTE_COMPLETION = "route-completion",
+}
 
 export class CreateFuelDto {
+  @IsOptional()
   @IsString()
+  externalId?: string;
+
+  @IsString()
+  @IsMongoId()
   driverId: string;
 
   @IsString()
+  @IsMongoId()
   vehicleId: string;
 
   @IsOptional()
   @IsString()
+  @IsMongoId()
   routeId?: string;
 
   @IsNumber()
   liters: number;
 
-  @IsEnum(['diesel', 'gasolina'], { message: 'fuelType must be diesel or gasolina' })
+  @IsString()
   fuelType: string;
 
-  @IsEnum(['light', 'heavy'], { message: 'machineryType must be light or heavy' })
-  machineryType: string;
+  @IsEnum(MachineryType)
+  machineryType: MachineryType;
+
+  @IsOptional()
+  @IsNumber()
+  odometer?: number;
 
   @IsOptional()
   @IsString()
   gpsLocation?: string;
 
-  @IsString()
-  userId: string; // viene desde tu Auth (JWT payload)
+  @IsOptional()
+  @IsEnum(FuelSource)
+  source?: FuelSource;
+
+  @IsOptional()
+  @IsNumber()
+  estimatedFuelL?: number;
+
+  @IsOptional()
+  @IsNumber()
+  distanceKm?: number;
+
+  @IsOptional()
+  @IsISO8601()
+  recordedAt?: string;
 }

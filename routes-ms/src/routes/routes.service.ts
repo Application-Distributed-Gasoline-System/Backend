@@ -1,12 +1,16 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
 import { PrismaClient } from '@prisma/client';
-import { RpcException } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { GrpcStatus, PaginationDto } from 'src/common';
 
 @Injectable()
 export class RoutesService extends PrismaClient implements OnModuleInit {
+
+  constructor(@Inject('NATS_SERVICE') private natsClient: ClientProxy) {
+    super();
+  }
 
   private readonly logger = new Logger('RoutesService');
 
@@ -529,7 +533,44 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
       const updated = await tx.route.update({
         where: { id },
         data: updateData,
+        include: { driver: true, vehicle: true },
       });
+
+      if (existing.status !== 'IN_PROGRESS' && updated.status === 'IN_PROGRESS') {
+        this.natsClient.emit('route.started', {
+          eventId: crypto.randomUUID(),
+          routeId: updated.id,
+          driverId: updated.driverId,
+          vehicleId: updated.vehicleId,
+          occurredAt: new Date().toISOString()
+        });
+      }
+
+      // Cambio a COMPLETED
+      if (existing.status !== 'COMPLETED' && updated.status === 'COMPLETED') {
+        this.natsClient.emit('route.completed', {
+          eventId: crypto.randomUUID(),
+          routeId: updated.id,
+          driverId: updated.driverId,
+          vehicleId: updated.vehicleId,
+          distanceKm: updated.distanceKm,
+          estimatedFuelLiters: updated.estimatedFuelL,
+          actualFuelLiters: updated.actualFuelL ?? undefined,
+          occurredAt: new Date().toISOString(),
+        });
+      }
+
+      // Cancelada
+      if (existing.status !== 'CANCELLED' && updated.status === 'CANCELLED') {
+        this.natsClient.emit('route.cancelled', {
+          eventId: crypto.randomUUID(),
+          routeId: updated.id,
+          vehicleId: updated.vehicleId,
+          driverId: updated.driverId,
+          occurredAt: new Date().toISOString(),
+        });
+      }
+
 
       return updated;
     });
@@ -551,17 +592,6 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
 
       await tx.route.delete({ where: { id } });
 
-      await tx.driverRef.update({
-        where: { id: route.driverId },
-        data: { isAvailable: true },
-      });
-
-      await tx.vehicleRef.update({
-        where: { id: route.vehicleId },
-        data: { available: true },
-      });
-
-      this.logger.log(`Ruta ${id} eliminada → Chofer y vehículo liberados`);
       return { message: `Ruta ${id} eliminada correctamente` };
     });
   }

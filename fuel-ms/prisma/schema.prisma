@@ -3,7 +3,6 @@
 
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,23 +13,36 @@ datasource db {
 }
 
 model FuelRecord {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  driverId      String   //@db.ObjectId
-  vehicleId     String   //@db.ObjectId
-  routeId       String?  //@db.ObjectId
+  externalId String? // id externo para idempotencia (ej: eventId)
+  driverId   String // @db.ObjectId (guardamos como string)
+  vehicleId  String // @db.ObjectId
+  routeId    String? // @db.ObjectId
 
   liters        Float
   fuelType      String
-  // Para separar por maquinaria liviana y pesada
-  machineryType String   // "light" | "heavy"
-  // Por si la empresa controla dispositivos IoT:
+  machineryType MachineryType
+  odometer      Float?
   gpsLocation   String?
+  source        String?
 
-  timestamp     DateTime @default(now())     // fecha creación
-  createdBy     String   //@db.ObjectId        // <── Guarda userId aquí
-  updatedAt     DateTime @updatedAt
+  estimatedFuelL Float?
+  distanceKm     Float?
+  deltaPercent   Float?
 
-  // .... Mas campos y o relaciones si esque es necesario (En mongo no se hace migraciones es decir NO se debe hacer npx prisma migrate --dev)
+  recordedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([routeId])
+  @@index([recordedAt])
+  @@index([externalId])
 }
 
+enum MachineryType {
+  LIGHT
+  HEAVY
+}

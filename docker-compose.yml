@@ -173,6 +173,7 @@ services:
       - HOST=0.0.0.0
       - DATABASE_URL=mongodb+srv://monteropablo511_db_user:sKLHAFAn3LQeX2m9@fuel-ms-db.anwzrhg.mongodb.net/fueldb
       - NATS_SERVERS=nats://nats-server:4222
+      - FUEL_ANOMALY_THRESHOLD=30
     depends_on:
       - nats-server
     ports:

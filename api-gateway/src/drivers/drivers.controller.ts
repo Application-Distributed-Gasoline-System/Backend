@@ -16,7 +16,6 @@ import { UpdateDriverDto } from './dto/update-driver.dto';
 import { PaginationDto } from 'src/common';
 import { RpcException } from '@nestjs/microservices';
 import { Roles } from 'src/auth/roles.decorator';
-import { RolesGuard } from 'src/auth/roles.guard';
 
 @Controller('drivers')
 export class DriversController {

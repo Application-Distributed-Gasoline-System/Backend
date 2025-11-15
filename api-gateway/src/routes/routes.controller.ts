@@ -12,6 +12,7 @@ export class RoutesController {
   constructor(private readonly routesClient: RoutesClientService) { }
 
   @Post()
+  @Roles('ADMIN', 'DISPATCHER')
   async create(@Body() createRouteDto: CreateRouteDto) {
     try {
       return await firstValueFrom(this.routesClient.createRoute(createRouteDto));
@@ -21,13 +22,13 @@ export class RoutesController {
   }
 
   @Get()
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'DISPATCHER')
   findAll(@Query() paginationDto: PaginationDto) {
     return firstValueFrom(this.routesClient.getAllRoutes(paginationDto));
   }
 
   @Get(':id')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'DISPATCHER', 'DRIVER')
   async findOne(@Param('id') id: string) {
     try {
       return await firstValueFrom(
@@ -39,7 +40,7 @@ export class RoutesController {
   }
 
   @Patch(':id')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'DISPATCHER')
   async update(@Param('id') id: string, @Body() updateRouteDto: UpdateRouteDto) {
     return firstValueFrom(
       this.routesClient.updateRoute({ id: Number(id), ...updateRouteDto }),
@@ -47,7 +48,7 @@ export class RoutesController {
   }
 
   @Delete(':id')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'DISPATCHER')
   async remove(@Param('id') id: string) {
     return firstValueFrom(this.routesClient.deleteRoute(Number(id)));
   }
