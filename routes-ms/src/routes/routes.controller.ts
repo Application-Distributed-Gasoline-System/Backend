@@ -23,7 +23,7 @@ export class RoutesController {
   }
 
   @EventPattern('vehicle.deleted')
-  async handleVehicleDeleted(@Payload() data: { id: number}) {
+  async handleVehicleDeleted(@Payload() data: { id: number }) {
     await this.routesService.deleteVehicleRef(data.id);
   }
 
@@ -86,6 +86,7 @@ export class RoutesController {
 
   @GrpcMethod('RouteService', 'UpdateRoute')
   async updateRoute(updateRouteDto: UpdateRouteDto & { id: number }) {
+    console.log('Payload recibido en microservicio gRPC:', updateRouteDto);
     const route = await this.routesService.updateRoute(updateRouteDto.id, updateRouteDto);
     return route
       ? { ...route, message: 'Actualizado' }

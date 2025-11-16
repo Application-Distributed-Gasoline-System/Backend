@@ -28,6 +28,7 @@ export interface RouteService {
     scheduledAt?: string;
     driverId?: string;
     vehicleId?: number;
+    actualFuelL?: number;
   }): Observable<any>;
   DeleteRoute(data: { id: number }): Observable<any>;
 }
@@ -75,6 +76,7 @@ export class RoutesClientService implements OnModuleInit {
     scheduledAt?: string;
     driverId?: string;
     vehicleId?: number;
+    actualFuelL?: number;
   }) {
     return this.routesService.UpdateRoute(data);
   }

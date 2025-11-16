@@ -1,6 +1,6 @@
 import type { Response } from 'express';
 import { NestFactory } from '@nestjs/core';
-import { FuelModule } from './app.module';
+import { AppModule } from './app.module';
 import { Controller, Get, Logger, Module, Res, ValidationPipe } from '@nestjs/common';
 import { join } from 'path';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -32,14 +32,15 @@ async function bootstrap() {
 
   const logger = new Logger('Main');
 
-  const app = await NestFactory.create(FuelModule);
+  const app = await NestFactory.create(AppModule);
 
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.NATS,
     options: {
-      servers: envs.NATS_SERVERS || ['nats://localhost:4222'],
+      servers: [process.env.NATS_SERVERS || 'nats://nats-server:4222'],
     },
   });
+
 
   app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,

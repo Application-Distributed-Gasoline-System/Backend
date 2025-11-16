@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsEnum, IsMongoId, IsISO8601 } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsEnum, IsISO8601 } from 'class-validator';
 
 export enum MachineryType {
   LIGHT = 'LIGHT',
@@ -17,16 +17,13 @@ export class CreateFuelDto {
   externalId?: string;
 
   @IsString()
-  @IsMongoId()
   driverId: string;
 
   @IsString()
-  @IsMongoId()
   vehicleId: string;
 
   @IsOptional()
   @IsString()
-  @IsMongoId()
   routeId?: string;
 
   @IsNumber()

@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 import { FuelService } from './fuel.service';
 import { FuelController } from './fuel.controller';
 import { PrismaService } from '../prisma/prisma.service';
-import { FuelEventsListener } from './fuel.nats.listener';
+import { NatsModule } from 'src/nats/nats.module';
 
 @Module({
-  imports: [],
-  providers: [FuelService, PrismaService, FuelEventsListener],
+  imports: [NatsModule],
+  providers: [FuelService, PrismaService],
   controllers: [FuelController],
 })
 export class FuelModule { }

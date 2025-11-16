@@ -5,10 +5,14 @@ import { FuelClientService } from './fuel-client.provider';
 import { first, firstValueFrom } from 'rxjs';
 import { report } from 'process';
 import { Roles } from 'src/auth/roles.decorator';
+import { VehiclesClientService } from '../vehicles/vehicles-client-provider';
 
 @Controller('fuel')
 export class FuelController {
-  constructor(private readonly fuelService: FuelClientService) { }
+  constructor(
+    private readonly fuelService: FuelClientService,
+    private readonly vehicleService: VehiclesClientService,
+  ) { }
 
   @Post()
   @Roles('ADMIN', 'DISPATCHER')
@@ -32,11 +36,25 @@ export class FuelController {
 
   @Get('report')
   @Roles('ADMIN', 'DISPATCHER')
-  getReport(@Query() reportRequestDto: ReportRequestDto) {
-    return firstValueFrom(
-      this.fuelService.getFuelReport(reportRequestDto)
+  async getReport(@Query() reportRequestDto: ReportRequestDto) {
+    const fuelData = await firstValueFrom(this.fuelService.getFuelReport(reportRequestDto));
+
+    // Llamada paralela para enriquecer los datos con info de vehículos
+    const enrichedData = await Promise.all(
+      fuelData.items.map(async item => {
+        const vehicle = await firstValueFrom(this.vehicleService.getVehicleById(item.vehicleId));
+        return {
+          vehicle,
+          totalLiters: item.totalLiters,
+          avgLitersPerKm: item.avgLitersPerKm,
+          recordsCount: item.recordsCount
+        };
+      })
     );
+
+    return enrichedData;
   }
+
 
 
 }

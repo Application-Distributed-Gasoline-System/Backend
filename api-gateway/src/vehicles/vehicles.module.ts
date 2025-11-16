@@ -20,6 +20,7 @@ import { envs, VEHICLES_PACKAGE } from 'src/config';
   ],
   controllers: [VehiclesController],
   providers: [VehiclesClientService],
+  exports: [VehiclesClientService],
 })
 export class VehiclesModule {}
 

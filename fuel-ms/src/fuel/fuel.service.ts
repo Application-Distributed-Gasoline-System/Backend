@@ -16,7 +16,12 @@ export class FuelService {
   }
 
   private normalizeDate(s?: string) {
-    return s ? new Date(s) : new Date();
+    if (!s) return new Date();
+    const date = new Date(s);
+    if (isNaN(date.getTime())) {
+      return new Date();
+    }
+    return date;
   }
 
   private normalizeSource(s?: string) {
@@ -86,8 +91,14 @@ export class FuelService {
     const where: any = { vehicleId };
     if (from || to) {
       where.recordedAt = {};
-      if (from) where.recordedAt.gte = new Date(from);
-      if (to) where.recordedAt.lte = new Date(to);
+      if (from) {
+        const fromDate = new Date(from + 'T00:00:00Z');
+        where.recordedAt.gte = fromDate;
+      }
+      if (to) {
+        const toDate = new Date(to + 'T23:59:59.999Z');
+        where.recordedAt.lte = toDate;
+      }
     }
 
     return this.prisma.fuelRecord.findMany({
@@ -100,8 +111,14 @@ export class FuelService {
     const where: any = {};
     if (from || to) {
       where.recordedAt = {};
-      if (from) where.recordedAt.gte = new Date(from);
-      if (to) where.recordedAt.lte = new Date(to);
+      if (from) {
+        const fromDate = new Date(from + 'T00:00:00Z');
+        where.recordedAt.gte = fromDate;
+      }
+      if (to) {
+        const toDate = new Date(to + 'T23:59:59.999Z');
+        where.recordedAt.lte = toDate;
+      }
     }
     if (vehicleIds && vehicleIds.length) where.vehicleId = { in: vehicleIds };
     if (machineryType) where.machineryType = machineryType;

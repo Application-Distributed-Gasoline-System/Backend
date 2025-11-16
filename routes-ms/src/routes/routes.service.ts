@@ -501,10 +501,8 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
       const updateData: any = { ...data };
 
       // Lógica específica para el consumo real (solo al completar)
-      if (data.status === 'COMPLETED' && data.actualFuelL != null) {
+      if (data.actualFuelL != null) {
         updateData.actualFuelL = data.actualFuelL;
-      } else {
-        delete updateData.actualFuelL;
       }
 
       // Usamos el valor que se enviaría o el existente, para el cálculo
@@ -529,48 +527,64 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
           }
         }
       }
+      if (existing.status !== data.status) {
+        if (data.status === 'IN_PROGRESS') {
+          updateData.startedAt = new Date().toISOString();
+          console.log(`🔹 Ruta ${id} pasó a IN_PROGRESS, seteando startedAt: ${updateData.startedAt}`);
+        }
 
+        if (data.status === 'COMPLETED') {
+          updateData.completedAt = new Date().toISOString();
+          console.log(`🔹 Ruta ${id} pasó a COMPLETED, seteando completedAt: ${updateData.completedAt}`);
+        }
+
+        if (data.status === 'CANCELLED') {
+          console.log(`🔹 Ruta ${id} pasó a CANCELLED`);
+        }
+      }
       const updated = await tx.route.update({
         where: { id },
         data: updateData,
         include: { driver: true, vehicle: true },
       });
 
-      if (existing.status !== 'IN_PROGRESS' && updated.status === 'IN_PROGRESS') {
-        this.natsClient.emit('route.started', {
-          eventId: crypto.randomUUID(),
-          routeId: updated.id,
-          driverId: updated.driverId,
-          vehicleId: updated.vehicleId,
-          occurredAt: new Date().toISOString()
-        });
-      }
+      if (existing.status !== updated.status) {
+        if (updated.status === 'IN_PROGRESS') {
+          this.natsClient.emit('route.started', {
+            eventId: crypto.randomUUID(),
+            routeId: updated.id,
+            driverId: updated.driverId,
+            vehicleId: updated.vehicleId,
+            occurredAt: new Date().toISOString()
+          });
+          console.log(`✅ Evento NATS route.started emitido para ruta ${updated.id}`);
+        }
 
-      // Cambio a COMPLETED
-      if (existing.status !== 'COMPLETED' && updated.status === 'COMPLETED') {
-        this.natsClient.emit('route.completed', {
-          eventId: crypto.randomUUID(),
-          routeId: updated.id,
-          driverId: updated.driverId,
-          vehicleId: updated.vehicleId,
-          distanceKm: updated.distanceKm,
-          estimatedFuelLiters: updated.estimatedFuelL,
-          actualFuelLiters: updated.actualFuelL ?? undefined,
-          occurredAt: new Date().toISOString(),
-        });
-      }
+        if (updated.status === 'COMPLETED') {
+          this.natsClient.emit('route.completed', {
+            eventId: crypto.randomUUID(),
+            routeId: updated.id,
+            driverId: updated.driverId,
+            vehicleId: updated.vehicleId,
+            distanceKm: updated.distanceKm,
+            estimatedFuelLiters: updated.estimatedFuelL,
+            actualFuelLiters: updated.actualFuelL,
+            occurredAt: new Date().toISOString(),
+          });
+          console.log(`✅ Evento NATS route.completed emitido para ruta ${updated.id}`);
+        }
 
-      // Cancelada
-      if (existing.status !== 'CANCELLED' && updated.status === 'CANCELLED') {
-        this.natsClient.emit('route.cancelled', {
-          eventId: crypto.randomUUID(),
-          routeId: updated.id,
-          vehicleId: updated.vehicleId,
-          driverId: updated.driverId,
-          occurredAt: new Date().toISOString(),
-        });
+        if (updated.status === 'CANCELLED') {
+          this.natsClient.emit('route.cancelled', {
+            eventId: crypto.randomUUID(),
+            routeId: updated.id,
+            vehicleId: updated.vehicleId,
+            driverId: updated.driverId,
+            occurredAt: new Date().toISOString(),
+          });
+          console.log(`✅ Evento NATS route.cancelled emitido para ruta ${updated.id}`);
+        }
       }
-
 
       return updated;
     });

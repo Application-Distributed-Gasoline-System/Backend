@@ -2,6 +2,7 @@ import { PartialType } from '@nestjs/mapped-types';
 import { CreateRouteDto } from './create-route.dto';
 import { IsOptional, IsString, IsNumber, IsEnum, IsDateString } from 'class-validator';
 import { MachineryType, RouteStatus } from './create-route.dto';
+import { Type } from 'class-transformer';
 
 export class UpdateRouteDto extends PartialType(CreateRouteDto) {
   @IsString()
@@ -10,6 +11,7 @@ export class UpdateRouteDto extends PartialType(CreateRouteDto) {
 
   @IsNumber()
   @IsOptional()
+  @Type(() => Number)
   actualFuelL?: number;
 
   @IsEnum(RouteStatus)

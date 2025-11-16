@@ -4,6 +4,7 @@ import { envs, FUEL_PACKAGE } from 'src/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { FuelClientService } from './fuel-client.provider';
+import { VehiclesModule } from '../vehicles/vehicles.module';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { FuelClientService } from './fuel-client.provider';
           url: `${envs.fuelMicroserviceHost}:${envs.fuelMicroservicePort}`
         },
       },
-    ]),
+    ]), VehiclesModule
   ],
   controllers: [FuelController],
   providers: [FuelClientService]
