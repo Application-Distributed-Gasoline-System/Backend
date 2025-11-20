@@ -33,6 +33,8 @@ message CreateFuelRequest {
 message CreateFuelResponse {
   string id = 1;
   FuelRecord record = 2;
+  bool isAnomaly=3;
+  string message = 4;
 }
 
 message FuelRecord {
@@ -63,6 +65,8 @@ message GetByVehicleRequest {
 
 message GetByVehicleResponse {
   repeated FuelRecord records = 1;
+  int32 anomaliesDetected = 2;
+  repeated AnomalyRecord anomalyRecords = 3;
 }
 
 message ReportRequest {
@@ -72,11 +76,22 @@ message ReportRequest {
   string machineryType = 4; // "LIGHT"|"HEAVY"
 }
 
+message AnomalyRecord {
+  string recordId = 1;
+  double deltaPercent = 2;
+  double liters = 3;
+  double estimatedFuelL = 4;
+  double distanceKm = 5;
+  google.protobuf.Timestamp recordedAt = 6;
+}
+
 message ReportItem {
   string vehicleId = 1;
   double totalLiters = 2;
   double avgLitersPerKm = 3;
   int32 recordsCount = 4;
+  int32 anomaliesDetected = 5;
+  repeated AnomalyRecord anomalyRecords = 6;
 }
 
 message ReportResponse {

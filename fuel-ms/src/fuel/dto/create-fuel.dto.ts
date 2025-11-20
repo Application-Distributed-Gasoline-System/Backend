@@ -1,10 +1,5 @@
 import { IsOptional, IsString, IsNumber, IsEnum, IsISO8601 } from 'class-validator';
 
-export enum MachineryType {
-  LIGHT = 'LIGHT',
-  HEAVY = 'HEAVY',
-}
-
 export enum FuelSource {
   MANUAL = 'manual',
   SENSOR = 'sensor',
@@ -28,12 +23,6 @@ export class CreateFuelDto {
 
   @IsNumber()
   liters: number;
-
-  @IsString()
-  fuelType: string;
-
-  @IsEnum(MachineryType)
-  machineryType: MachineryType;
 
   @IsOptional()
   @IsNumber()

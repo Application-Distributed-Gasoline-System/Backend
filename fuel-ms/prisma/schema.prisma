@@ -16,9 +16,9 @@ model FuelRecord {
   id String @id @default(auto()) @map("_id") @db.ObjectId
 
   externalId String? // id externo para idempotencia (ej: eventId)
-  driverId   String 
-  vehicleId  String 
-  routeId    String? 
+  driverId   String
+  vehicleId  String
+  routeId    String?
 
   liters        Float
   fuelType      String
@@ -45,4 +45,12 @@ model FuelRecord {
 enum MachineryType {
   LIGHT
   HEAVY
+}
+
+model VehicleRef {
+  id                 String  @id @map("_id")
+  plate              String
+  averageConsumption Float
+  engineType         String?
+  machineryType      String?
 }

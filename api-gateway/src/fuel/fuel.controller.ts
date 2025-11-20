@@ -24,14 +24,23 @@ export class FuelController {
 
   @Get('vehicle/:id')
   @Roles('ADMIN', 'DISPATCHER')
-  findByVehicle(
+  async findByVehicle(
     @Param('id') id: string,
     @Query('from') from?: string,
     @Query('to') to?: string,
   ) {
-    return firstValueFrom(
+    const fuelData = await firstValueFrom(
       this.fuelService.getFuelByVehicle(id, from, to)
     );
+
+    const vehicle = await firstValueFrom(this.vehicleService.getVehicleById(+id));
+
+    return {
+      vehicle,
+      records: fuelData.records,
+      anomaliesDetected: fuelData.anomaliesDetected,
+      anomalyRecords: fuelData.anomalyRecords,
+    };
   }
 
   @Get('report')
@@ -39,7 +48,6 @@ export class FuelController {
   async getReport(@Query() reportRequestDto: ReportRequestDto) {
     const fuelData = await firstValueFrom(this.fuelService.getFuelReport(reportRequestDto));
 
-    // Llamada paralela para enriquecer los datos con info de vehículos
     const enrichedData = await Promise.all(
       fuelData.items.map(async item => {
         const vehicle = await firstValueFrom(this.vehicleService.getVehicleById(item.vehicleId));
@@ -47,7 +55,9 @@ export class FuelController {
           vehicle,
           totalLiters: item.totalLiters,
           avgLitersPerKm: item.avgLitersPerKm,
-          recordsCount: item.recordsCount
+          recordsCount: item.recordsCount,
+          anomaliesDetected: item.anomaliesDetected,
+          anomalyRecords: item.anomalyRecords,
         };
       })
     );

@@ -379,7 +379,8 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
       // Calcular consumo estimado
       const estimatedFuelL =
         data.estimatedFuelL ??
-        Number(data.distanceKm * vehicle.averageConsumption);
+        Number((data.distanceKm / 100) * vehicle.averageConsumption);
+
 
       // Crear ruta
       const route = await tx.route.create({
@@ -494,7 +495,7 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
         newDriverId,
         newVehicleId,
         newScheduledAt,
-        id, // Excluir el ID de la ruta que estamos actualizando
+        id,
       );
 
       // 6. Preparar datos de actualización
@@ -522,7 +523,7 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
       else if (shouldRecalculate) {
         if (data.estimatedFuelL === undefined || data.estimatedFuelL === null || data.estimatedFuelL === 0) {
           if (vehicle.averageConsumption !== undefined && currentDistanceKm != null) {
-            const newEstimatedFuelL = Number(currentDistanceKm * vehicle.averageConsumption);
+            const newEstimatedFuelL = Number((currentDistanceKm / 100) * vehicle.averageConsumption);
             updateData.estimatedFuelL = newEstimatedFuelL;
           }
         }
@@ -534,8 +535,16 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
         }
 
         if (data.status === 'COMPLETED') {
+          const hasActualFuel = data.actualFuelL !== undefined && data.actualFuelL !== null;
+
+          if (!hasActualFuel) {
+            throw new RpcException({
+              code: GrpcStatus.INVALID_ARGUMENT,
+              message: 'Para completar la ruta es OBLIGATORIO proporcionar el consumo real de combustible (actualFuelL).',
+            });
+          }
+
           updateData.completedAt = new Date().toISOString();
-          console.log(`🔹 Ruta ${id} pasó a COMPLETED, seteando completedAt: ${updateData.completedAt}`);
         }
 
         if (data.status === 'CANCELLED') {
@@ -570,6 +579,8 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
             estimatedFuelLiters: updated.estimatedFuelL,
             actualFuelLiters: updated.actualFuelL,
             occurredAt: new Date().toISOString(),
+            fuelType: vehicle.engineType,
+            machineryType: vehicle.machineryType
           });
           console.log(`✅ Evento NATS route.completed emitido para ruta ${updated.id}`);
         }
@@ -604,7 +615,23 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
           message: `Ruta con ID ${id} no encontrada`,
         });
 
+      if (route.status === 'IN_PROGRESS') {
+        throw new RpcException({
+          code: GrpcStatus.FAILED_PRECONDITION,
+          message: `No se puede eliminar la ruta ${id} porque está EN PROGRESO. Debes cancelarla o completarla primero.`,
+        });
+      }
+
+      if (route.status === 'COMPLETED') {
+        throw new RpcException({
+          code: GrpcStatus.FAILED_PRECONDITION,
+          message: `No se puede eliminar la ruta ${id} porque ya fue COMPLETADA y es parte del historial.`,
+        });
+      }
+
       await tx.route.delete({ where: { id } });
+
+      this.logger.log(`Ruta ${id} eliminada correctamente (Estaba en estado ${route.status})`);
 
       return { message: `Ruta ${id} eliminada correctamente` };
     });
