@@ -125,6 +125,7 @@ export class FuelService {
         driverId: dto.driverId,
         vehicleId: dto.vehicleId,
         routeId: dto.routeId ?? null,
+        routeCode: dto.routeCode,
         liters: dto.liters,
         fuelType: finalFuelType,
         machineryType: finalMachineryType as any,

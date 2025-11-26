@@ -19,6 +19,7 @@ model FuelRecord {
   driverId   String
   vehicleId  String
   routeId    String?
+  routeCode String?
 
   liters        Float
   fuelType      String

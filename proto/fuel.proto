@@ -15,15 +15,16 @@ message CreateFuelDto {
   string driverId = 2;
   string vehicleId = 3;
   string routeId = 4;
-  double liters = 5;
-  string fuelType = 6;
-  string machineryType = 7; // "LIGHT" | "HEAVY"
-  double odometer = 8;
-  string gpsLocation = 9;
-  string source = 10; // "manual" | "sensor" | "route-completion"
-  double estimatedFuelL = 11;
-  double distanceKm = 12;
-  google.protobuf.Timestamp recordedAt = 13;
+  string routeCode=5;
+  double liters = 6;
+  string fuelType = 7;
+  string machineryType = 8; // "LIGHT" | "HEAVY"
+  double odometer = 9;
+  string gpsLocation = 10;
+  string source = 11; // "manual" | "sensor" | "route-completion"
+  double estimatedFuelL = 12;
+  double distanceKm = 13;
+  google.protobuf.Timestamp recordedAt = 14;
 }
 
 message CreateFuelRequest {
@@ -43,18 +44,19 @@ message FuelRecord {
   string driverId = 3;
   string vehicleId = 4;
   string routeId = 5;
-  double liters = 6;
-  string fuelType = 7;
-  string machineryType = 8;
-  double odometer = 9;
-  string gpsLocation = 10;
-  string source = 11;
-  double estimatedFuelL = 12;
-  double distanceKm = 13;
-  double deltaPercent = 14;
-  google.protobuf.Timestamp recordedAt = 15;
-  google.protobuf.Timestamp createdAt = 16;
-  google.protobuf.Timestamp updatedAt = 17;
+  string routeCode=6;
+  double liters = 7;
+  string fuelType = 8;
+  string machineryType = 9;
+  double odometer = 10;
+  string gpsLocation = 11;
+  string source = 12;
+  double estimatedFuelL = 13;
+  double distanceKm = 14;
+  double deltaPercent = 15;
+  google.protobuf.Timestamp recordedAt = 16;
+  google.protobuf.Timestamp createdAt = 17;
+  google.protobuf.Timestamp updatedAt = 18;
 }
 
 message GetByVehicleRequest {

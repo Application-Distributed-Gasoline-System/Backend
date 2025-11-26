@@ -614,6 +614,7 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
           this.natsClient.emit('route.completed', {
             eventId: crypto.randomUUID(),
             routeId: updated.id,
+            routeCode: updated.code,
             driverId: updated.driverId,
             vehicleId: updated.vehicleId,
             distanceKm: updated.distanceKm,

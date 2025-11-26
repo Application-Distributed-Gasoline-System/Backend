@@ -36,6 +36,7 @@ export class FuelController {
       const dto: CreateFuelDto = {
         externalId: payload.eventId,
         routeId: payload.routeId?.toString(),
+        routeCode: payload.routeCode ?? null,
         vehicleId: payload.vehicleId?.toString(),
         driverId: payload.driverId,
         liters: liters,
@@ -77,6 +78,7 @@ export class FuelController {
       driverId: data.record.driverId,
       vehicleId: data.record.vehicleId,
       routeId: data.record.routeId,
+      routeCode: data.record.routeCode,
       liters: data.record.liters,
       odometer: data.record.odometer,
       gpsLocation: data.record.gpsLocation,

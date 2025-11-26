@@ -20,6 +20,10 @@ export class CreateFuelDto {
   @IsOptional()
   @IsString()
   routeId?: string;
+  
+  @IsOptional()
+  @IsString()
+  routeCode?: string;
 
   @IsNumber()
   liters: number;
