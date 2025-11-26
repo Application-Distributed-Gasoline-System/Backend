@@ -401,7 +401,48 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
       return route;
     });
   }
+  private mapRoute(route: any) {
+    return {
+      id: route.id,
+      code: route.code,
+      origin: route.origin,
+      destination: route.destination,
+      distanceKm: route.distanceKm,
+      machineryType: route.machineryType,
+      estimatedFuelL: route.estimatedFuelL ?? 0,
+      actualFuelL: route.actualFuelL ?? 0,
+      status: route.status,
+      scheduledAt: route.scheduledAt?.toISOString() ?? "",
+      startedAt: route.startedAt?.toISOString() ?? "",
+      completedAt: route.completedAt?.toISOString() ?? "",
+      createdAt: route.createdAt.toISOString(),
+      updatedAt: route.updatedAt.toISOString(),
 
+      driver: route.driver
+        ? {
+          id: route.driver.id,
+          name: route.driver.name ?? "",
+          license: route.driver.license ?? "",
+          isAvailable: route.driver.isAvailable,
+        }
+        : null,
+
+      vehicle: route.vehicle
+        ? {
+          id: route.vehicle.id,
+          plate: route.vehicle.plate,
+          engineType: route.vehicle.engineType,
+          machineryType: route.vehicle.machineryType,
+          tankCapacity: route.vehicle.tankCapacity,
+          engineDisplacement: route.vehicle.engineDisplacement,
+          averageConsumption: route.vehicle.averageConsumption,
+          mileage: route.vehicle.mileage,
+          available: route.vehicle.available,
+          status: route.vehicle.status,
+        }
+        : null,
+    };
+  }
   async findAllRoutes(paginationDto: PaginationDto) {
     const { page, limit } = paginationDto;
     const skip = (page - 1) * limit;
@@ -418,7 +459,7 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
       ]);
 
       return {
-        routes: data,
+        routes: data.map(r => this.mapRoute(r)),
         total,
         page,
         totalPages: Math.ceil(total / limit),
@@ -444,7 +485,7 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
         message: `Ruta con ID ${id} no encontrada`,
       });
 
-    return route;
+    return this.mapRoute(route);
   }
 
   async updateRoute(id: number, data: UpdateRouteDto) {
@@ -597,7 +638,7 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
         }
       }
 
-      return updated;
+      return this.mapRoute(updated);
     });
   }
 

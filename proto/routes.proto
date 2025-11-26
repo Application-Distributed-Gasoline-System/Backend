@@ -11,6 +11,25 @@ service RouteService {
 }
 
 // ======== Requests ========
+message Driver {
+  string id = 1;
+  string name = 2;
+  string license = 3;
+  bool isAvailable = 4;
+}
+
+message Vehicle {
+  int32 id = 1;
+  string plate = 2;
+  string engineType = 3;
+  string machineryType = 4;
+  float tankCapacity = 5;
+  float engineDisplacement = 6;
+  float averageConsumption = 7;
+  float mileage = 8;
+  bool available = 9;
+  string status = 10;
+}
 
 message GetAllRoutesRequest {
   int32 page = 1;
@@ -65,14 +84,15 @@ message RouteResponse {
   string scheduledAt = 10;
   string startedAt = 11;
   string completedAt = 12;
-  string driverId = 13;
-  string driverName = 14;      // Para mostrar la copia local
-  int32 vehicleId = 15;
-  string vehiclePlate = 16;    // Para mostrar la copia local
-  string createdAt = 17;
-  string updatedAt = 18;
-  string message = 19;
+
+  Driver driver = 13;     // <── objeto completo
+  Vehicle vehicle = 14;   // <── objeto completo
+
+  string createdAt = 15;
+  string updatedAt = 16;
+  string message = 17;
 }
+
 
 message GetAllRoutesResponse {
   repeated RouteResponse routes = 1;
