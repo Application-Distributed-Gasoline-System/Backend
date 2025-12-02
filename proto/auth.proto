@@ -29,6 +29,7 @@ message LoginResponse {
   string accessToken = 3;
   string refreshToken = 4;
   int64 expiresIn = 5;
+  string driverId = 6;
 }
 
 // --- Tokens ---

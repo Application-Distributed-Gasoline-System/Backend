@@ -1,5 +1,5 @@
 import { Controller, Post, Body, HttpCode, Get, Patch } from '@nestjs/common';
-import { AuthClientService } from './auth-client.provider'; // Asegúrate que esta ruta sea correcta
+import { AuthClientService } from './auth-client.provider';
 import { firstValueFrom } from 'rxjs';
 import { Public } from './public.decorator';
 import { Roles } from './roles.decorator';

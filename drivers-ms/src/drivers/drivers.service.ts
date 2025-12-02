@@ -183,4 +183,11 @@ export class DriversService extends PrismaClient implements OnModuleInit {
     }
     return deletedDriver;
   }
+
+  async getDriverByUserId(userId: string) {
+    return await this.driver.findUnique({
+      where: { userId },
+    });
+  }
+
 }

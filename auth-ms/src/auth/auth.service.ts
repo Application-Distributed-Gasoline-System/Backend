@@ -103,10 +103,25 @@ export class AuthService {
       },
     });
 
+    let driverId = null;
+    if (user.role === 'DRIVER') {
+      try {
+        const res = await this.natsClient.send(
+          'driver.find.by.user',
+          { userId: user.id }
+        ).toPromise();
+
+        driverId = res?.driverId || null;
+      } catch (err) {
+        console.error('Error getting driverId:', err);
+      }
+    }
+
     return {
       accessToken,
       refreshToken: refreshTokenStr,
       expiresIn: this.jwtExpiresIn,
+      driverId,
     };
   }
 

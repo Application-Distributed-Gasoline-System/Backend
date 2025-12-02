@@ -4,11 +4,18 @@ import { EventPattern, GrpcMethod, Payload } from '@nestjs/microservices';
 import { CreateDriverDto } from './dto/create-driver.dto';
 import { UpdateDriverDto } from './dto/update-driver.dto';
 import { PaginationDto } from 'src/common';
-
+import { MessagePattern } from '@nestjs/microservices';
 @Controller()
 export class DriversController {
   private readonly logger = new Logger(DriversController.name);
   constructor(private readonly driversService: DriversService) { }
+
+  @MessagePattern('driver.find.by.user')
+  async handleFindDriverByUser(@Payload() data: { userId: string }) {
+    const driver = await this.driversService.getDriverByUserId(data.userId);
+    if (!driver) return null;
+    return { driverId: driver.id };
+  }
 
   @EventPattern('driver.created')
   async handleDriverCreated(@Payload() data: any) {

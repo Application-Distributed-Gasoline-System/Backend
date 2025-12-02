@@ -46,6 +46,7 @@ export class AuthController {
         accessToken: res.accessToken,
         refreshToken: res.refreshToken,
         expiresIn: res.expiresIn,
+        driverId: res.driverId || null
       };
     } catch (error: any) {
       if (error instanceof UnauthorizedException) {
