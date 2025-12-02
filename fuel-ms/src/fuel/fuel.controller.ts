@@ -126,4 +126,31 @@ export class FuelController {
     const items = await this.fuelService.getReport(data);
     return { items };
   }
+
+  @GrpcMethod('FuelService', 'GetByDriver')
+  async getByDriver(data: { driverId: string; from?: string; to?: string }) {
+    const records = await this.fuelService.getByDriver(
+      data.driverId,
+      data.from,
+      data.to
+    );
+
+    const anomalies = records.filter((r: any) => r.isAnomaly);
+
+    const anomalyRecords = anomalies.map((r: any) => ({
+      recordId: r.id,
+      deltaPercent: r.deltaPercent,
+      liters: r.liters,
+      estimatedFuelL: r.estimatedFuelL,
+      distanceKm: r.distanceKm,
+      recordedAt: r.recordedAt,
+    }));
+
+    return {
+      records,
+      anomaliesDetected: anomalies.length,
+      anomalyRecords
+    };
+  }
+
 }

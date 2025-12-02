@@ -8,6 +8,7 @@ service RouteService {
   rpc CreateRoute (CreateRouteRequest) returns (RouteResponse);
   rpc UpdateRoute (UpdateRouteRequest) returns (RouteResponse);
   rpc DeleteRoute (RouteByIdRequest) returns (RouteResponse);
+  rpc GetRoutesByDriver (RoutesByDriverRequest) returns (RoutesByDriverResponse);
 }
 
 // ======== Requests ========
@@ -95,6 +96,19 @@ message RouteResponse {
 
 
 message GetAllRoutesResponse {
+  repeated RouteResponse routes = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 totalPages = 4;
+}
+
+message RoutesByDriverRequest {
+  string driverId = 1;
+  int32 page = 2;
+  int32 limit = 3;
+}
+
+message RoutesByDriverResponse {
   repeated RouteResponse routes = 1;
   int32 total = 2;
   int32 page = 3;

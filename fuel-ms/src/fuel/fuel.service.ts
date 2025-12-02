@@ -8,7 +8,14 @@ export class FuelService {
   private readonly ANOMALY_THRESHOLD_PERCENT = Number(process.env.FUEL_ANOMALY_THRESHOLD ?? 30);
 
   constructor(private prisma: PrismaService) { }
-
+  private toLocalDayRange(dateStr: string) {
+    const d = new Date(dateStr);
+    const start = new Date(d);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(d);
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+  }
   private computeDelta(liters: number, estimated?: number): number | null {
     if (estimated == null || estimated === 0) return null;
     return ((liters - estimated) / estimated) * 100;
@@ -27,6 +34,14 @@ export class FuelService {
       return lower as FuelSource;
     }
     return FuelSource.MANUAL;
+  }
+
+  private toTimestamp(date?: Date | string) {
+    if (!date) return null;
+    const d = date instanceof Date ? date : new Date(date);
+    const seconds = Math.floor(d.getTime() / 1000);
+    const nanos = (d.getTime() % 1000) * 1e6;
+    return { seconds, nanos };
   }
 
   async syncVehicleRef(data: any) {
@@ -159,17 +174,24 @@ export class FuelService {
     const where: any = { vehicleId };
     if (from || to) {
       where.recordedAt = {};
-      if (from) where.recordedAt.gte = new Date(from);
-      if (to) where.recordedAt.lte = new Date(to);
+      if (from) {
+        const { start } = this.toLocalDayRange(from);
+        where.recordedAt.gte = start;
+      }
+      if (to) {
+        const { end } = this.toLocalDayRange(to);
+        where.recordedAt.lte = end;
+      }
+
     }
 
-    const records = await this.prisma.fuelRecord.findMany({
-      where,
-      orderBy: { recordedAt: 'desc' },
-    });
+    const records = await this.prisma.fuelRecord.findMany({ where, orderBy: { recordedAt: 'desc' } });
 
     return records.map(r => ({
       ...r,
+      recordedAt: this.toTimestamp(r.recordedAt),
+      createdAt: this.toTimestamp(r.createdAt),
+      updatedAt: this.toTimestamp(r.updatedAt),
       isAnomaly: r.deltaPercent !== null && Math.abs(r.deltaPercent) >= this.ANOMALY_THRESHOLD_PERCENT,
       anomalyInfo: r.deltaPercent !== null
         ? {
@@ -183,7 +205,11 @@ export class FuelService {
   }
 
 
-  async getReport({ from, to, vehicleIds, machineryType }: { from: string; to: string; vehicleIds?: string[]; machineryType?: string }) {
+  async getReport(data: { from: string; to: string; vehicleIds?: string[]; machineryType?: string }) {
+    if (!data) return [];
+
+    const { from, to, vehicleIds, machineryType } = data;
+
     const where: any = {};
     if (from || to) {
       where.recordedAt = {};
@@ -201,20 +227,32 @@ export class FuelService {
     >();
 
     for (const r of records) {
+      const vehicleRef = await this.prisma.vehicleRef.findUnique({ where: { id: r.vehicleId } });
+      const avgConsumption = vehicleRef?.averageConsumption ?? 1; // fallback si no hay
+
+      const distanceKm = r.distanceKm ?? (r.estimatedFuelL ? (r.estimatedFuelL / avgConsumption) * 100 : 0);
+
       const v = map.get(r.vehicleId) ?? { totalLiters: 0, totalKm: 0, count: 0, anomalies: 0, anomalyRecords: [] };
 
       v.totalLiters += r.liters ?? 0;
-      v.totalKm += r.distanceKm ?? 0;
+      v.totalKm += distanceKm;
       v.count += 1;
 
-      if (r.deltaPercent !== null && r.deltaPercent !== undefined && Math.abs(r.deltaPercent) >= this.ANOMALY_THRESHOLD_PERCENT) {
+      // Calculamos deltaPercent si no existe
+      let deltaPercent = r.deltaPercent;
+      if (deltaPercent === null && distanceKm > 0) {
+        const estimatedFuel = (distanceKm / 100) * avgConsumption;
+        deltaPercent = ((r.liters - estimatedFuel) / estimatedFuel) * 100;
+      }
+
+      if (deltaPercent !== null && Math.abs(deltaPercent) >= this.ANOMALY_THRESHOLD_PERCENT) {
         v.anomalies += 1;
         v.anomalyRecords.push({
           recordId: r.id,
-          deltaPercent: r.deltaPercent,
+          deltaPercent,
           liters: r.liters,
-          estimatedFuelL: r.estimatedFuelL,
-          distanceKm: r.distanceKm,
+          estimatedFuelL: r.estimatedFuelL ?? (distanceKm / 100) * avgConsumption,
+          distanceKm,
           recordedAt: r.recordedAt,
         });
       }
@@ -230,6 +268,41 @@ export class FuelService {
       anomaliesDetected: agg.anomalies,
       anomalyRecords: agg.anomalyRecords,
     }));
-
   }
+
+
+  async getByDriver(driverId: string, from?: string, to?: string) {
+    const where: any = { driverId };
+    if (from || to) {
+      where.recordedAt = {};
+      if (from) {
+        const { start } = this.toLocalDayRange(from);
+        where.recordedAt.gte = start;
+      }
+      if (to) {
+        const { end } = this.toLocalDayRange(to);
+        where.recordedAt.lte = end;
+      }
+    }
+
+    const records = await this.prisma.fuelRecord.findMany({
+      where,
+      orderBy: { recordedAt: 'desc' },
+    });
+
+    return records.map(r => ({
+      ...r,
+      isAnomaly: r.deltaPercent !== null
+        && Math.abs(r.deltaPercent) >= this.ANOMALY_THRESHOLD_PERCENT,
+      anomalyInfo: r.deltaPercent !== null
+        ? {
+          deltaPercent: r.deltaPercent,
+          liters: r.liters,
+          estimatedFuelL: r.estimatedFuelL,
+          distanceKm: r.distanceKm,
+        }
+        : null,
+    }));
+  }
+
 }

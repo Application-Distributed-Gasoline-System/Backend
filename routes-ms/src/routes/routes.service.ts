@@ -678,4 +678,26 @@ export class RoutesService extends PrismaClient implements OnModuleInit {
       return { message: `Ruta ${id} eliminada correctamente` };
     });
   }
+  async getRoutesByDriver(driverId: string, page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.route.findMany({
+        where: { driverId },
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: { driver: true, vehicle: true },
+      }),
+
+      this.route.count({ where: { driverId } }),
+    ]);
+
+    return {
+      routes: data.map(r => this.mapRoute(r)),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
 }

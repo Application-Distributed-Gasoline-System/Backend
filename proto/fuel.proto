@@ -7,6 +7,7 @@ service FuelService {
   rpc CreateFuel(CreateFuelRequest) returns (CreateFuelResponse);
   rpc GetByVehicle(GetByVehicleRequest) returns (GetByVehicleResponse);
   rpc GetReport(ReportRequest) returns (ReportResponse);
+  rpc GetByDriver(GetByDriverRequest) returns (GetByDriverResponse);
 }
 
 // DTO usado para creación (no requiere todos los campos de FuelRecord)
@@ -99,3 +100,17 @@ message ReportItem {
 message ReportResponse {
   repeated ReportItem items = 1;
 }
+
+message GetByDriverRequest {
+  string driverId = 1;
+  string from = 2;
+  string to = 3;
+}
+
+message GetByDriverResponse {
+  repeated FuelRecord records = 1;
+  int32 anomaliesDetected = 2;
+  repeated AnomalyRecord anomalyRecords = 3;
+}
+
+

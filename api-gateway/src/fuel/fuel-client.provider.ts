@@ -9,7 +9,13 @@ import { ReportRequestDto } from './dto/report-request.dto';
 export interface FuelServiceGrpc {
   CreateFuel(data: { record: any }): Observable<any>;
   GetByVehicle(data: { vehicleId: string; from?: string; to?: string }): Observable<any>;
-  GetReport(data: ReportRequestDto): Observable<any>;
+  GetReport(data: {
+    from: string;
+    to: string;
+    vehicleIds?: string[];
+    machineryType?: string;
+  }): Observable<any>;
+  GetByDriver(data: { driverId: string; from?: string; to?: string }): Observable<any>;
 }
 
 // ====== Cliente ======
@@ -33,7 +39,18 @@ export class FuelClientService implements OnModuleInit {
   getFuelByVehicle(vehicleId: string, from?: string, to?: string) {
     return this.fuelService.GetByVehicle({ vehicleId, from, to });
   }
+
   getFuelReport(dto: ReportRequestDto) {
-    return this.fuelService.GetReport(dto);
+    return this.fuelService.GetReport({
+      from: dto.from,
+      to: dto.to,
+      vehicleIds: dto.vehicleIds ?? [],
+      machineryType: dto.machineryType ?? '',
+    });
   }
+
+  getFuelByDriver(driverId: string, from?: string, to?: string) {
+    return this.fuelService.GetByDriver({ driverId, from, to });
+  }
+
 }

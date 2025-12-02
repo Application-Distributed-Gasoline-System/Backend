@@ -100,4 +100,17 @@ export class RoutesController {
       ? { ...route, message: 'Eliminado' }
       : { id: '', name: '', license: '', message: 'No encontrado' };
   }
+
+  @GrpcMethod('RouteService', 'GetRoutesByDriver')
+  async getRoutesByDriver(data: { driverId: string; page: number; limit: number }) {
+    const response = await this.routesService.getRoutesByDriver(data.driverId, data.page, data.limit);
+
+    return {
+      routes: response.routes,
+      total: response.total,
+      page: response.page,
+      totalPages: response.totalPages,
+    };
+  }
+
 }

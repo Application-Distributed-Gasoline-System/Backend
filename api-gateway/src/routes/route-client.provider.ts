@@ -31,6 +31,16 @@ export interface RouteService {
     actualFuelL?: number;
   }): Observable<any>;
   DeleteRoute(data: { id: number }): Observable<any>;
+  GetRoutesByDriver(data: {
+    driverId: string;
+    page: number;
+    limit: number;
+  }): Observable<{
+    routes: any[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }>;
 }
 
 @Injectable()
@@ -83,5 +93,8 @@ export class RoutesClientService implements OnModuleInit {
 
   deleteRoute(id: number) {
     return this.routesService.DeleteRoute({ id });
+  }
+  getRoutesByDriver(data: { driverId: string; page: number; limit: number }) {
+    return this.routesService.GetRoutesByDriver(data);
   }
 }

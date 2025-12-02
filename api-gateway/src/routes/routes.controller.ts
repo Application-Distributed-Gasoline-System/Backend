@@ -40,7 +40,7 @@ export class RoutesController {
   }
 
   @Patch(':id')
-  @Roles('ADMIN', 'DISPATCHER')
+  @Roles('ADMIN', 'DISPATCHER', 'DRIVER')
   async update(@Param('id') id: string, @Body() updateRouteDto: UpdateRouteDto) {
     return firstValueFrom(
       this.routesClient.updateRoute({ id: Number(id), ...updateRouteDto }),
@@ -51,5 +51,24 @@ export class RoutesController {
   @Roles('ADMIN', 'DISPATCHER')
   async remove(@Param('id') id: string) {
     return firstValueFrom(this.routesClient.deleteRoute(Number(id)));
+  }
+
+  @Get('driver/:driverId')
+  @Roles('ADMIN', 'DISPATCHER', 'DRIVER')
+  async findByDriver(
+    @Param('driverId') driverId: string,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    try {
+      return await firstValueFrom(
+        this.routesClient.getRoutesByDriver({
+          driverId,
+          page: paginationDto.page,
+          limit: paginationDto.limit,
+        }),
+      );
+    } catch (error) {
+      throw new RpcException(error);
+    }
   }
 }
