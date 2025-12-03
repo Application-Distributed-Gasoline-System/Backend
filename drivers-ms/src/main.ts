@@ -51,7 +51,7 @@ async function bootstrap() {
     },
   });
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
 
   await app.startAllMicroservices();
   await app.listen(3001);

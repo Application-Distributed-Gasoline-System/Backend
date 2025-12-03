@@ -22,13 +22,13 @@ export class DriversController {
   constructor(private readonly driversClient: DriversClientService) {}
 
   @Get()
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'DISPATCHER', 'DRIVER')
   async getAll(@Query() paginationDto: PaginationDto) {
     return firstValueFrom(this.driversClient.getAllDrivers(paginationDto));
   }
 
   @Get(':id')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'DISPATCHER', 'DRIVER')
   async findOne(@Param('id') id: string) {
     try {
       return await firstValueFrom(this.driversClient.getDriverById(id));

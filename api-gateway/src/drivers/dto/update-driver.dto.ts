@@ -1,3 +1,4 @@
+import { Transform, Type } from 'class-transformer';
 import {
   IsString,
   IsOptional,
@@ -21,7 +22,12 @@ export class UpdateDriverDto {
   @IsOptional()
   phone: string;
 
-  //@Type(() => Date)
+  @Transform(({ value }) => {
+    if (!value) return value;
+    const date = new Date(value);
+    return !isNaN(date.getTime()) ? date.toISOString() : value;
+  })
+  @Type(() => Date)
   @IsDate({ message: 'La fecha de nacimiento debe ser una fecha válida' })
   @IsOptional()
   birthDate: Date;

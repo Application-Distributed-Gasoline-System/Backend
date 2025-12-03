@@ -115,7 +115,7 @@ services:
       - PORT=5002
       - HOST=0.0.0.0
       - JWT_SECRET=supersecretkeyreplace
-      - JWT_EXPIRES_IN=900
+      - JWT_EXPIRES_IN=3600
       - REFRESH_TOKEN_EXPIRES_DAYS=30
       - RESET_TOKEN_EXPIRES_HOURS=1
       - DATABASE_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/authdb?sslmode=require&channel_binding=require

@@ -19,16 +19,16 @@ import { RolesGuard } from 'src/auth/roles.guard';
 
 @Controller('vehicles')
 export class VehiclesController {
-  constructor(private readonly vehiclesClient: VehiclesClientService) {}
+  constructor(private readonly vehiclesClient: VehiclesClientService) { }
 
   @Get()
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'DISPATCHER', 'DRIVER')
   async getAll(@Query() paginationDto: PaginationDto) {
     return firstValueFrom(this.vehiclesClient.getAllVehicles(paginationDto));
   }
 
   @Get(':id')
-  @Roles('ADMIN')
+  @Roles('ADMIN', 'DISPATCHER', 'DRIVER')
   async getById(@Param('id') id: string) {
     try {
       return await firstValueFrom(

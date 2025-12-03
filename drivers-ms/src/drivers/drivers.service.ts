@@ -97,13 +97,46 @@ export class DriversService extends PrismaClient implements OnModuleInit {
   }
 
   async updateDriver(id: string, data: UpdateDriverDto) {
-    const driver = await this.driver.update({ where: { id }, data });
+    // Preparar datos excluyendo birthDate temporalmente
+    const { birthDate, ...restData } = data;
+    const updateData: any = { ...restData };
+
+    // Procesar birthDate si existe
+    if (birthDate !== undefined && birthDate !== null) {
+      try {
+        let isoDate: string;
+
+        if (birthDate instanceof Date) {
+          isoDate = birthDate.toISOString();
+        } else if (typeof birthDate === 'string') {
+          // Intentar convertir string a Date y luego a ISO
+          const dateObj = new Date(birthDate);
+          if (isNaN(dateObj.getTime())) {
+            throw new Error('Fecha inválida');
+          }
+          isoDate = dateObj.toISOString();
+        } else {
+          // Otro tipo de dato, intentar convertir
+          isoDate = new Date(birthDate as any).toISOString();
+        }
+
+        updateData.birthDate = isoDate;
+      } catch (error) {
+        this.logger.error(`Error procesando fecha: ${error.message}`, birthDate);
+      }
+    }
+
+    const driver = await this.driver.update({
+      where: { id },
+      data: updateData
+    });
+
     await this.natsClient.emit('drivers.driver.update', {
       id: driver.id,
       name: driver.name,
       license: driver.license ?? null,
-      //isAvailable: driver.isAvailable,
     });
+
     return driver;
   }
 
