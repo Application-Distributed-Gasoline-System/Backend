@@ -14,7 +14,7 @@ import { VehiclesModule } from '../vehicles/vehicles.module';
         transport: Transport.GRPC,
         options: {
           package: 'fuel',
-          protoPath: join(__dirname, '../../proto/fuel.proto'),
+          protoPath: join(__dirname, '../proto/fuel.proto'),
           url: `${envs.fuelMicroserviceHost}:${envs.fuelMicroservicePort}`
         },
       },

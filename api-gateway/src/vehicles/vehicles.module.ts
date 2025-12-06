@@ -12,7 +12,7 @@ import { envs, VEHICLES_PACKAGE } from 'src/config';
         transport: Transport.GRPC,
           options: {
             package: 'vehicles',
-            protoPath: join(__dirname, '../../proto/vehicles.proto'), 
+            protoPath: join(__dirname, '../proto/vehicles.proto'), 
             url: `${envs.vehiclesMicroserviceHost}:${envs.vehiclesMicroservicePort}`,
           },
        },

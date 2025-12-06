@@ -14,7 +14,7 @@ import { RoutesClientService } from './route-client.provider';
           transport: Transport.GRPC,
             options: {
               package: 'routes',
-              protoPath: join(__dirname, '../../proto/routes.proto'), 
+              protoPath: join(__dirname, '../proto/routes.proto'), 
               url: `${envs.routesMicroserviceHost}:${envs.routesMicroservicePort}`
             },
          },

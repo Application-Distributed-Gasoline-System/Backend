@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+package routes;
+
+service RouteService {
+  rpc GetAllRoutes (GetAllRoutesRequest) returns (GetAllRoutesResponse);
+  rpc GetRouteById (RouteByIdRequest) returns (RouteResponse);
+  rpc CreateRoute (CreateRouteRequest) returns (RouteResponse);
+  rpc UpdateRoute (UpdateRouteRequest) returns (RouteResponse);
+  rpc DeleteRoute (RouteByIdRequest) returns (RouteResponse);
+  rpc GetRoutesByDriver (RoutesByDriverRequest) returns (RoutesByDriverResponse);
+}
+
+// ======== Requests ========
+message Driver {
+  string id = 1;
+  string name = 2;
+  string license = 3;
+  bool isAvailable = 4;
+}
+
+message Vehicle {
+  int32 id = 1;
+  string plate = 2;
+  string engineType = 3;
+  string machineryType = 4;
+  float tankCapacity = 5;
+  float engineDisplacement = 6;
+  float averageConsumption = 7;
+  float mileage = 8;
+  bool available = 9;
+  string status = 10;
+}
+
+message GetAllRoutesRequest {
+  int32 page = 1;
+  int32 limit = 2;
+}
+
+message RouteByIdRequest {
+  int32 id = 1;
+}
+
+message CreateRouteRequest {
+  string origin = 1;
+  string destination = 2;
+  float distanceKm = 3;
+  float estimatedFuelL = 4;
+  string status = 5;
+  string scheduledAt = 6;
+  string driverId = 7;
+  int32 vehicleId = 8;
+  string machineryType = 9;
+}
+
+message UpdateRouteRequest {
+  int32 id = 1;
+  string code = 2;
+  string origin = 3;
+  string destination = 4;
+  float distanceKm = 5;
+  string machineryType = 6;
+  float estimatedFuelL = 7;
+  float actualFuelL = 8;
+  string status = 9;
+  string scheduledAt = 10;
+  string startedAt = 11;
+  string completedAt = 12;
+  string driverId = 13;
+  int32 vehicleId = 14;
+}
+
+// ======== Responses ========
+
+message RouteResponse {
+  int32 id = 1;
+  string code = 2;
+  string origin = 3;
+  string destination = 4;
+  float distanceKm = 5;
+  string machineryType = 6;
+  float estimatedFuelL = 7;
+  float actualFuelL = 8;
+  string status = 9;
+  string scheduledAt = 10;
+  string startedAt = 11;
+  string completedAt = 12;
+
+  Driver driver = 13;     // <── objeto completo
+  Vehicle vehicle = 14;   // <── objeto completo
+
+  string createdAt = 15;
+  string updatedAt = 16;
+  string message = 17;
+}
+
+
+message GetAllRoutesResponse {
+  repeated RouteResponse routes = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 totalPages = 4;
+}
+
+message RoutesByDriverRequest {
+  string driverId = 1;
+  int32 page = 2;
+  int32 limit = 3;
+}
+
+message RoutesByDriverResponse {
+  repeated RouteResponse routes = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 totalPages = 4;
+}

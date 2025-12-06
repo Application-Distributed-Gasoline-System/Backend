@@ -1,0 +1,116 @@
+syntax = "proto3";
+package fuel;
+
+import "google/protobuf/timestamp.proto";
+
+service FuelService {
+  rpc CreateFuel(CreateFuelRequest) returns (CreateFuelResponse);
+  rpc GetByVehicle(GetByVehicleRequest) returns (GetByVehicleResponse);
+  rpc GetReport(ReportRequest) returns (ReportResponse);
+  rpc GetByDriver(GetByDriverRequest) returns (GetByDriverResponse);
+}
+
+// DTO usado para creación (no requiere todos los campos de FuelRecord)
+message CreateFuelDto {
+  string externalId = 1;
+  string driverId = 2;
+  string vehicleId = 3;
+  string routeId = 4;
+  string routeCode=5;
+  double liters = 6;
+  string fuelType = 7;
+  string machineryType = 8; // "LIGHT" | "HEAVY"
+  double odometer = 9;
+  string gpsLocation = 10;
+  string source = 11; // "manual" | "sensor" | "route-completion"
+  double estimatedFuelL = 12;
+  double distanceKm = 13;
+  google.protobuf.Timestamp recordedAt = 14;
+}
+
+message CreateFuelRequest {
+  CreateFuelDto record = 1;
+}
+
+message CreateFuelResponse {
+  string id = 1;
+  FuelRecord record = 2;
+  bool isAnomaly=3;
+  string message = 4;
+}
+
+message FuelRecord {
+  string id = 1;
+  string externalId = 2;
+  string driverId = 3;
+  string vehicleId = 4;
+  string routeId = 5;
+  string routeCode=6;
+  double liters = 7;
+  string fuelType = 8;
+  string machineryType = 9;
+  double odometer = 10;
+  string gpsLocation = 11;
+  string source = 12;
+  double estimatedFuelL = 13;
+  double distanceKm = 14;
+  double deltaPercent = 15;
+  google.protobuf.Timestamp recordedAt = 16;
+  google.protobuf.Timestamp createdAt = 17;
+  google.protobuf.Timestamp updatedAt = 18;
+}
+
+message GetByVehicleRequest {
+  string vehicleId = 1;
+  string from = 2; // ISO date string optional
+  string to = 3;   // ISO date string optional
+}
+
+message GetByVehicleResponse {
+  repeated FuelRecord records = 1;
+  int32 anomaliesDetected = 2;
+  repeated AnomalyRecord anomalyRecords = 3;
+}
+
+message ReportRequest {
+  string from = 1;
+  string to = 2;
+  repeated string vehicleIds = 3;
+  string machineryType = 4; // "LIGHT"|"HEAVY"
+}
+
+message AnomalyRecord {
+  string recordId = 1;
+  double deltaPercent = 2;
+  double liters = 3;
+  double estimatedFuelL = 4;
+  double distanceKm = 5;
+  google.protobuf.Timestamp recordedAt = 6;
+}
+
+message ReportItem {
+  string vehicleId = 1;
+  double totalLiters = 2;
+  double avgLitersPerKm = 3;
+  int32 recordsCount = 4;
+  int32 anomaliesDetected = 5;
+  repeated AnomalyRecord anomalyRecords = 6;
+}
+
+message ReportResponse {
+  repeated ReportItem items = 1;
+}
+
+message GetByDriverRequest {
+  string driverId = 1;
+  string from = 2;
+  string to = 3;
+}
+
+message GetByDriverResponse {
+  repeated FuelRecord records = 1;
+  int32 anomaliesDetected = 2;
+  repeated AnomalyRecord anomalyRecords = 3;
+}
+
+

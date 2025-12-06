@@ -1,0 +1,87 @@
+
+services:
+  nats-server:
+    image: nats:latest
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: dockerfile.prod
+    image: api-gateway-prod
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - DRIVERS_MICROSERVICE_HOST=drivers-ms
+      - DRIVERS_MICROSERVICE_PORT=5000
+      - VEHICLES_MICROSERVICE_HOST=vehicles-ms
+      - VEHICLES_MICROSERVICE_PORT=5001
+      - AUTH_MICROSERVICE_HOST=auth-ms
+      - AUTH_MICROSERVICE_PORT=5002 
+      - ROUTES_MICROSERVICE_HOST=routes-ms
+      - ROUTES_MICROSERVICE_PORT=5003 
+      - FUEL_MICROSERVICE_HOST=fuel-ms
+      - FUEL_MICROSERVICE_PORT=5004
+
+  drivers-ms:
+    build:
+      context: ./drivers-ms
+      dockerfile: dockerfile.prod
+    image: drivers-ms-prod
+    environment:
+      - PORT=5000
+      - HOST=0.0.0.0
+      - DATABASE_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/driversdb?sslmode=require&channel_binding=require
+      - NATS_SERVERS=nats://nats-server:4222
+
+  vehicles-ms:
+    build:
+      context: ./vehicles-ms
+      dockerfile: dockerfile.prod
+    image: vehicles-ms-prod
+    environment:
+      - PORT=5001
+      - HOST=0.0.0.0
+      - DATABASE_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/vehiclesdb?sslmode=require&channel_binding=require
+      - READ_REPLICA_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-restless-hall-ado7fpky-pooler.c-2.us-east-1.aws.neon.tech/vehiclesdb?sslmode=require&channel_binding=require
+      - NATS_SERVERS=nats://nats-server:4222
+
+  auth-ms:
+    build:
+      context: ./auth-ms
+      dockerfile: dockerfile.prod
+    image: auth-ms-prod
+    environment:
+      - PORT=5002
+      - HOST=0.0.0.0
+      - JWT_SECRET=supersecretkeyreplace
+      - JWT_EXPIRES_IN=3600
+      - REFRESH_TOKEN_EXPIRES_DAYS=30
+      - RESET_TOKEN_EXPIRES_HOURS=1
+      - DATABASE_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/authdb?sslmode=require&channel_binding=require
+      - SMTP_USER=95e7ab001@smtp-brevo.com
+      - SMTP_PASS=mQRVFGvASkcLtNgj
+      - SENDER_EMAIL=garciadayle2004@gmail.com
+      - NODE_ENV=development
+      - NATS_SERVERS=nats://nats-server:4222
+  routes-ms:
+    build:
+      context: ./routes-ms
+      dockerfile: dockerfile.prod
+    image: routes-ms-prod
+    environment:
+      - PORT=5003
+      - HOST=0.0.0.0
+      - DATABASE_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/routesdb?sslmode=require&channel_binding=require
+      - NATS_SERVERS=nats://nats-server:4222
+  fuel-ms:
+    build:
+      context: ./fuel-ms
+      dockerfile: dockerfile.prod
+    image: fuel-ms-prod
+    environment:
+      - PORT=5004
+      - HOST=0.0.0.0
+      - DATABASE_URL=mongodb+srv://monteropablo511_db_user:sKLHAFAn3LQeX2m9@fuel-ms-db.anwzrhg.mongodb.net/fueldb
+      - NATS_SERVERS=nats://nats-server:4222
+      - FUEL_ANOMALY_THRESHOLD=30
