@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { envs } from './config';
 import { RpcCustomExceptionFilter } from './common';
 import { AuthGuard } from './auth/auth.guard';
@@ -30,7 +30,12 @@ async function bootstrap() {
     optionsSuccessStatus: 204,
   });
 
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', {
+    exclude: [{
+      path: '',
+      method: RequestMethod.GET
+    }]
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({

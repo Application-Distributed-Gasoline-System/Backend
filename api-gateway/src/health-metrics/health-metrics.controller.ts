@@ -6,18 +6,18 @@ import { Public } from '../auth/public.decorator';
 const register = new Registry();
 collectDefaultMetrics({ register });
 
-@Controller()
+@Controller('/')
 export class HealthMetricsController {
   @Public()
-  @Get('health')
+  @Get()
   getHealth() {
     return { status: 'ok', service: 'api-gateway', timestamp: new Date() };
   }
-  @Public()
-  @Get('metrics')
-  async getMetrics(@Res() res: Response) {
-    const metrics = await register.metrics();
-    res.setHeader('Content-Type', register.contentType);
-    res.send(metrics);
-  }
+  // @Public()
+  // @Get('metrics')
+  // async getMetrics(@Res() res: Response) {
+  //   const metrics = await register.metrics();
+  //   res.setHeader('Content-Type', register.contentType);
+  //   res.send(metrics);
+  // }
 }
