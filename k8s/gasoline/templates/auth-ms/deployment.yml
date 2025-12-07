@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: auth-ms
+  name: auth-ms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-ms
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: auth-ms
+    spec:
+      containers:
+      - image: southamerica-west1-docker.pkg.dev/ape-3-auth/image-registry/auth-ms
+        name: auth-ms
+        env:
+        - name: PORT
+          value: "5002"
+        - name: HOST
+          value: "0.0.0.0"
+        - name: JWT_SECRET
+          value: "supersecretkeyreplace"
+        - name: JWT_EXPIRES_IN
+          value: "3600"
+        - name: REFRESH_TOKEN_EXPIRES_DAYS
+          value: "30"
+        - name: RESET_TOKEN_EXPIRES_HOURS
+          value: "1"
+        - name: DATABASE_URL
+          value: "postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/authdb?sslmode=require&channel_binding=require"
+        - name: SMTP_USER
+          value: "95e7ab001@smtp-brevo.com"
+        - name: SMTP_PASS
+          value: "mQRVFGvASkcLtNgj"
+        - name: SENDER_EMAIL
+          value: "garciadayle2004@gmail.com"
+        - name: NODE_ENV
+          value: "development"
+        - name: NATS_SERVERS
+          value: "nats://nats"
+        resources: {}
+status: {}

@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: fuel-ms
+  name: fuel-ms
+spec:
+  ports:
+  - name: "5004"
+    port: 5004
+    protocol: TCP
+    targetPort: 5004
+  selector:
+    app: fuel-ms
+  type: ClusterIP
+status:
+  loadBalancer: {}

@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: vehicles-ms
+  name: vehicles-ms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vehicles-ms
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: vehicles-ms
+    spec:
+      containers:
+      - image: southamerica-west1-docker.pkg.dev/ape-3-auth/image-registry/vehicles-ms
+        name: vehicles-ms
+        env:
+        - name: PORT
+          value: "5001"
+        - name: HOST
+          value: "0.0.0.0"
+        - name: DATABASE_URL
+          value: "postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/vehiclesdb?sslmode=require&channel_binding=require"
+        - name: READ_REPLICA_URL
+          value: "postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-restless-hall-ado7fpky-pooler.c-2.us-east-1.aws.neon.tech/vehiclesdb?sslmode=require&channel_binding=require"
+        - name: NATS_SERVERS
+          value: "nats://nats"
+        resources: {}
+status: {}

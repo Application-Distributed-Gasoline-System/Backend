@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: routes-ms
+  name: routes-ms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: routes-ms
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: routes-ms
+    spec:
+      containers:
+      - image: southamerica-west1-docker.pkg.dev/ape-3-auth/image-registry/routes-ms
+        name: routes-ms
+        env:
+        - name: PORT
+          value: "5003"
+        - name: HOST
+          value: "0.0.0.0"
+        - name: DATABASE_URL
+          value: "postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/routesdb?sslmode=require&channel_binding=require"
+        - name: NATS_SERVERS
+          value: "nats://nats"
+        resources: {}
+status: {}

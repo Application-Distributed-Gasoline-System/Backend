@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: fuel-ms
+  name: fuel-ms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fuel-ms
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: fuel-ms
+    spec:
+      containers:
+      - image: southamerica-west1-docker.pkg.dev/ape-3-auth/image-registry/fuel-ms
+        name: fuel-ms
+        env:
+        - name: PORT
+          value: "5004"
+        - name: HOST
+          value: "0.0.0.0"
+        - name: DATABASE_URL
+          value: "mongodb+srv://monteropablo511_db_user:sKLHAFAn3LQeX2m9@fuel-ms-db.anwzrhg.mongodb.net/fueldb"
+        - name: NATS_SERVERS
+          value: "nats://nats"
+        - name: FUEL_ANOMALY_THRESHOLD
+          value: "30"
+        resources: {}
+status: {}

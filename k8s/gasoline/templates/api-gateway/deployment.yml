@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: api-gateway
+  name: api-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+      - image: southamerica-west1-docker.pkg.dev/ape-3-auth/image-registry/api-gateway
+        name: api-gateway
+        env:
+        - name: PORT
+          value: "4000"
+        - name: DRIVERS_MICROSERVICE_HOST
+          value: "drivers-ms"
+        - name: DRIVERS_MICROSERVICE_PORT
+          value: "5000"
+        - name: VEHICLES_MICROSERVICE_HOST
+          value: "vehicles-ms"
+        - name: VEHICLES_MICROSERVICE_PORT
+          value: "5001"
+        - name: AUTH_MICROSERVICE_HOST
+          value: "auth-ms"
+        - name: AUTH_MICROSERVICE_PORT
+          value: "5002"
+        - name: ROUTES_MICROSERVICE_HOST
+          value: "routes-ms"
+        - name: ROUTES_MICROSERVICE_PORT
+          value: "5003"
+        - name: FUEL_MICROSERVICE_HOST
+          value: "fuel-ms"
+        - name: FUEL_MICROSERVICE_PORT
+          value: "5004"
+        resources: {}
+status: {}

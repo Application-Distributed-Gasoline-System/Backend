@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: drivers-ms
+  name: drivers-ms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: drivers-ms
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: drivers-ms
+    spec:
+      containers:
+      - image: southamerica-west1-docker.pkg.dev/ape-3-auth/image-registry/drivers-ms
+        name: drivers-ms
+        env:
+        - name: PORT
+          value: "5000"
+        - name: HOST
+          value: "0.0.0.0"
+        - name: DATABASE_URL
+          value: "postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/driversdb?sslmode=require&channel_binding=require"
+        - name: NATS_SERVERS
+          value: "nats://nats"
+        resources: {}
+status: {}
