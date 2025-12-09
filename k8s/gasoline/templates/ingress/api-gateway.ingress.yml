@@ -2,9 +2,17 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: gasoline-ingress
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    networking.gke.io/managed-certificates: "api-gateway-cert"  # nombre del certificado gestionado
 spec:
+  tls:
+    - hosts:
+        - api.gasolinesystem.com  # tu dominio HTTPS para la API
+      secretName: api-gateway-tls  # se crea automáticamente si es managed
   rules:
-    - http:
+    - host: api.gasolinesystem.com
+      http:
         paths:
         - path: /*
           pathType: ImplementationSpecific
