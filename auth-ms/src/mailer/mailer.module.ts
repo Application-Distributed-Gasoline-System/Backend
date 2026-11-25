@@ -15,12 +15,10 @@ import { MailerService } from './mailer.service';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         transport: {
-          host: 'smtp-relay.sendinblue.com',
-          port: 587,
+          host:
+            configService.get<string>('SMTP_HOST') || 'smtp-relay.brevo.com',
+          port: Number(configService.get<string>('SMTP_PORT') || 587),
           secure: false,
-          tls: {
-            rejectUnauthorized: false,
-          },
           auth: {
             user: configService.get<string>('SMTP_USER'),
             pass: configService.get<string>('SMTP_PASS'),
@@ -31,7 +29,6 @@ import { MailerService } from './mailer.service';
         },
         // Configuración de Plantillas
         template: {
-          
           dir: path.join(__dirname, '..', 'templates'),
           adapter: new HandlebarsAdapter(),
           options: {
