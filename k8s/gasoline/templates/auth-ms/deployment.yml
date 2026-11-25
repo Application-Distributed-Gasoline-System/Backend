@@ -26,7 +26,10 @@ spec:
         - name: HOST
           value: "0.0.0.0"
         - name: JWT_SECRET
-          value: "supersecretkeyreplace"
+          valueFrom:
+            secretKeyRef:
+              name: gasoline-secrets
+              key: JWT_SECRET
         - name: JWT_EXPIRES_IN
           value: "3600"
         - name: REFRESH_TOKEN_EXPIRES_DAYS
@@ -34,13 +37,25 @@ spec:
         - name: RESET_TOKEN_EXPIRES_HOURS
           value: "1"
         - name: DATABASE_URL
-          value: "postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/authdb?sslmode=require&channel_binding=require"
+          valueFrom:
+            secretKeyRef:
+              name: gasoline-secrets
+              key: AUTH_DATABASE_URL
         - name: SMTP_USER
-          value: "95e7ab001@smtp-brevo.com"
+          valueFrom:
+            secretKeyRef:
+              name: gasoline-secrets
+              key: SMTP_USER
         - name: SMTP_PASS
-          value: "mQRVFGvASkcLtNgj"
+          valueFrom:
+            secretKeyRef:
+              name: gasoline-secrets
+              key: SMTP_PASS
         - name: SENDER_EMAIL
-          value: "garciadayle2004@gmail.com"
+          valueFrom:
+            secretKeyRef:
+              name: gasoline-secrets
+              key: SENDER_EMAIL
         - name: NODE_ENV
           value: "development"
         - name: NATS_SERVERS

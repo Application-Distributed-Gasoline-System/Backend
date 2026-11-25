@@ -31,7 +31,7 @@ services:
     environment:
       - PORT=5000
       - HOST=0.0.0.0
-      - DATABASE_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/driversdb?sslmode=require&channel_binding=require
+      - DATABASE_URL=${DRIVERS_DATABASE_URL:?Define DRIVERS_DATABASE_URL en el archivo .env}
       - NATS_SERVERS=nats://nats-server:4222
 
   vehicles-ms:
@@ -42,8 +42,8 @@ services:
     environment:
       - PORT=5001
       - HOST=0.0.0.0
-      - DATABASE_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/vehiclesdb?sslmode=require&channel_binding=require
-      - READ_REPLICA_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-restless-hall-ado7fpky-pooler.c-2.us-east-1.aws.neon.tech/vehiclesdb?sslmode=require&channel_binding=require
+      - DATABASE_URL=${VEHICLES_DATABASE_URL:?Define VEHICLES_DATABASE_URL en el archivo .env}
+      - READ_REPLICA_URL=${VEHICLES_READ_REPLICA_URL:?Define VEHICLES_READ_REPLICA_URL en el archivo .env}
       - NATS_SERVERS=nats://nats-server:4222
 
   auth-ms:
@@ -54,14 +54,14 @@ services:
     environment:
       - PORT=5002
       - HOST=0.0.0.0
-      - JWT_SECRET=supersecretkeyreplace
+      - JWT_SECRET=${JWT_SECRET:?Define JWT_SECRET en el archivo .env}
       - JWT_EXPIRES_IN=3600
       - REFRESH_TOKEN_EXPIRES_DAYS=30
       - RESET_TOKEN_EXPIRES_HOURS=1
-      - DATABASE_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/authdb?sslmode=require&channel_binding=require
-      - SMTP_USER=95e7ab001@smtp-brevo.com
-      - SMTP_PASS=mQRVFGvASkcLtNgj
-      - SENDER_EMAIL=garciadayle2004@gmail.com
+      - DATABASE_URL=${AUTH_DATABASE_URL:?Define AUTH_DATABASE_URL en el archivo .env}
+      - SMTP_USER=${SMTP_USER:?Define SMTP_USER en el archivo .env}
+      - SMTP_PASS=${SMTP_PASS:?Define SMTP_PASS en el archivo .env}
+      - SENDER_EMAIL=${SENDER_EMAIL:?Define SENDER_EMAIL en el archivo .env}
       - NODE_ENV=development
       - NATS_SERVERS=nats://nats-server:4222
   routes-ms:
@@ -72,7 +72,7 @@ services:
     environment:
       - PORT=5003
       - HOST=0.0.0.0
-      - DATABASE_URL=postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/routesdb?sslmode=require&channel_binding=require
+      - DATABASE_URL=${ROUTES_DATABASE_URL:?Define ROUTES_DATABASE_URL en el archivo .env}
       - NATS_SERVERS=nats://nats-server:4222
   fuel-ms:
     build:
@@ -82,6 +82,6 @@ services:
     environment:
       - PORT=5004
       - HOST=0.0.0.0
-      - DATABASE_URL=mongodb+srv://monteropablo511_db_user:sKLHAFAn3LQeX2m9@fuel-ms-db.anwzrhg.mongodb.net/fueldb
+      - DATABASE_URL=${FUEL_DATABASE_URL:?Define FUEL_DATABASE_URL en el archivo .env}
       - NATS_SERVERS=nats://nats-server:4222
       - FUEL_ANOMALY_THRESHOLD=30
