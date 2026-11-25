@@ -14,7 +14,10 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   app.enableCors({
-    origin: (process.env.CORS_ORIGINS || 'http://localhost:3001')
+    origin: (
+      process.env.CORS_ORIGINS ||
+      'http://localhost:3001,https://gasolinesystem.vercel.app'
+    )
       .split(',')
       .map((origin) => origin.trim())
       .filter(Boolean),
