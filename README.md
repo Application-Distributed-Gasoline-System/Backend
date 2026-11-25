@@ -96,6 +96,27 @@ docker compose up --build -d
 
 ---
 
+## Variables de entorno y secretos
+
+Ningún archivo del repositorio debe contener contraseñas ni cadenas de conexión reales.
+
+**Docker Compose.** `docker-compose.yml` y `docker-compose.prod.yml` leen las credenciales de un archivo `.env` en esta carpeta, que está en `.gitignore`:
+
+```bash
+cp .env.example .env   # y rellena cada valor
+docker compose up --build
+```
+
+Si falta una variable, Compose se detiene e indica cuál.
+
+**Kubernetes.** Los manifiestos de `k8s/gasoline` toman las credenciales del Secret `gasoline-secrets`. Créalo una vez en el clúster, con las mismas claves que `.env.example`:
+
+```bash
+kubectl create secret generic gasoline-secrets --from-env-file=.env
+```
+
+Las variables de Grafana no se usan en Kubernetes; `kubectl` ignora las claves que ningún manifiesto lee.
+
 ## Configuracion de Prismas para microservicio Drivers (Esto NO DEBEN HACER porque se tienen enlazada a mi base de datos en technoSQL, solo es información )
 
 

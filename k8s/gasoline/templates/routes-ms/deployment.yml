@@ -26,7 +26,10 @@ spec:
         - name: HOST
           value: "0.0.0.0"
         - name: DATABASE_URL
-          value: "postgresql://neondb_owner:npg_CFKg9qRZQ1zH@ep-flat-cake-adi2jggr-pooler.c-2.us-east-1.aws.neon.tech/routesdb?sslmode=require&channel_binding=require"
+          valueFrom:
+            secretKeyRef:
+              name: gasoline-secrets
+              key: ROUTES_DATABASE_URL
         - name: NATS_SERVERS
           value: "nats://nats"
         resources: {}

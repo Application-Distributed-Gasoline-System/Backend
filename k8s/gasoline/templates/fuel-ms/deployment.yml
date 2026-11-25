@@ -26,7 +26,10 @@ spec:
         - name: HOST
           value: "0.0.0.0"
         - name: DATABASE_URL
-          value: "mongodb+srv://monteropablo511_db_user:sKLHAFAn3LQeX2m9@fuel-ms-db.anwzrhg.mongodb.net/fueldb"
+          valueFrom:
+            secretKeyRef:
+              name: gasoline-secrets
+              key: FUEL_DATABASE_URL
         - name: NATS_SERVERS
           value: "nats://nats"
         - name: FUEL_ANOMALY_THRESHOLD
