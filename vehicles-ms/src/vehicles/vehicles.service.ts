@@ -22,6 +22,13 @@ export class VehiclesService implements OnModuleInit {
       // Cliente principal (escrituras - usa DATABASE_URL del env)
       const primaryClient = new PrismaClient();
 
+      if (!process.env.READ_REPLICA_URL) {
+        this.prisma = primaryClient;
+        await primaryClient.$connect();
+        this.logger.log('Primary database connected');
+        return;
+      }
+
       // Cliente de réplica (lecturas)
       const replicaClient = new PrismaClient({
         datasources: {
@@ -43,6 +50,7 @@ export class VehiclesService implements OnModuleInit {
       this.logger.log('Primary & Replica connected using Prisma extension');
     } catch (err) {
       this.logger.error('Error connecting to DB:', err);
+      throw err;
     }
   }
 
@@ -137,5 +145,5 @@ export class VehiclesService implements OnModuleInit {
 
     this.natsClient.emit('vehicle.deleted', deletedVehicle);
     return deletedVehicle;
-  }
+  }
 }

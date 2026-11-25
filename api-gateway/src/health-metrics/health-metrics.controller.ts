@@ -13,6 +13,11 @@ export class HealthMetricsController {
   getHealth() {
     return { status: 'ok', service: 'api-gateway', timestamp: new Date() };
   }
+  @Public()
+  @Get('health')
+  health() {
+    return this.getHealth();
+  }
   // @Public()
   // @Get('metrics')
   // async getMetrics(@Res() res: Response) {
