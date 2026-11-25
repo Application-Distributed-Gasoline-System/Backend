@@ -66,3 +66,8 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # Optional - Docker
 # =========================
 docker-compose.override.yml
+
+# Deployment state and private backups
+deploy/backups/
+deploy/.env.*
+!deploy/.env.example

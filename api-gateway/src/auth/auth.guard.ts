@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   Injectable,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthClientService } from './auth-client.provider';
@@ -54,11 +55,29 @@ export class AuthGuard implements CanActivate {
         role: validationResult.role,
       };
 
+      // The public portfolio account may inspect sample data but cannot change it.
+      const isDemo =
+        validationResult.email === 'demo@fuelops.dayle.dev' ||
+        (!!process.env.DEMO_EMAIL &&
+          validationResult.email === process.env.DEMO_EMAIL);
+      if (
+        isDemo &&
+        !['GET', 'HEAD', 'OPTIONS'].includes(request.method) &&
+        request.path !== '/api/auth/logout'
+      ) {
+        throw new ForbiddenException(
+          'La demo es de solo lectura. Los datos de ejemplo no se pueden modificar.',
+        );
+      }
+
       return true; // Acceso permitido
     } catch (error) {
       // Manejar errores como gRPC fallido o token inválido
       // Si ya lanzamos una UnauthorizedException, la propagamos.
-      if (error instanceof UnauthorizedException) {
+      if (
+        error instanceof UnauthorizedException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       // Para cualquier otro error (ej. conexión gRPC), usamos un error genérico

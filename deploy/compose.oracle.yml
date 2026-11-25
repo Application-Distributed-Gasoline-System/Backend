@@ -1,0 +1,261 @@
+name: fuelops
+
+x-app: &app
+  restart: unless-stopped
+  init: true
+  networks: [backend]
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+  environment: &environment
+    NODE_ENV: production
+    HOST: 0.0.0.0
+    NATS_SERVERS: nats://nats-server:4222
+  healthcheck: &health
+    test:
+      [
+        CMD,
+        node,
+        -e,
+        "fetch('http://127.0.0.1:'+process.env.HEALTH_PORT+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+      ]
+    interval: 30s
+    timeout: 10s
+    retries: 5
+    start_period: 120s
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    networks: [backend]
+    environment:
+      POSTGRES_USER: fuelops
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres-init.sql:/docker-entrypoint-initdb.d/01-databases.sql:ro
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U fuelops -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mongo:
+    image: mongo:7.0
+    restart: unless-stopped
+    networks: [backend]
+    environment: &mongo-environment
+      MONGO_INITDB_ROOT_USERNAME: fuelops
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:?Set MONGO_PASSWORD}
+      MONGO_REPLICA_KEY: ${MONGO_REPLICA_KEY:?Set MONGO_REPLICA_KEY}
+    entrypoint: [/bin/bash, /bootstrap/mongo-entrypoint.sh]
+    volumes:
+      - mongo-data:/data/db
+      - ./mongo-entrypoint.sh:/bootstrap/mongo-entrypoint.sh:ro
+    healthcheck:
+      test:
+        [
+          CMD,
+          mongosh,
+          --quiet,
+          --eval,
+          "quit(db.adminCommand({ping:1}).ok ? 0 : 1)",
+        ]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
+
+  mongo-init:
+    image: mongo:7.0
+    networks: [backend]
+    environment: *mongo-environment
+    depends_on:
+      mongo: { condition: service_healthy }
+    volumes:
+      - ./mongo-init.js:/bootstrap/mongo-init.js:ro
+    entrypoint: [mongosh, --nodb, --quiet, /bootstrap/mongo-init.js]
+    restart: on-failure
+
+  nats-server:
+    image: nats:2.11-alpine
+    restart: unless-stopped
+    networks: [backend]
+    command: [--http_port, "8222"]
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1:8222/healthz]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  auth-ms:
+    <<: *app
+    build:
+      { context: .., dockerfile: deploy/Dockerfile, args: { SERVICE: auth-ms } }
+    environment:
+      <<: *environment
+      PORT: 5002
+      HEALTH_PORT: 9102
+      DATABASE_URL: postgresql://fuelops:${POSTGRES_PASSWORD}@postgres:5432/authdb?schema=public
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      JWT_EXPIRES_IN: 3600
+      REFRESH_TOKEN_EXPIRES_DAYS: 30
+      RESET_TOKEN_EXPIRES_HOURS: 1
+      FRONTEND_URL: https://${DOMAIN:-fuelops.dayle.dev}
+      DEMO_EMAIL: demo@fuelops.dayle.dev
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@fuelops.dayle.dev}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD}
+      SMTP_HOST: ${SMTP_HOST:-smtp-relay.brevo.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-not-configured}
+      SMTP_PASS: ${SMTP_PASS:-not-configured}
+      SENDER_EMAIL: ${SENDER_EMAIL:-noreply@fuelops.dayle.dev}
+    depends_on:
+      postgres: { condition: service_healthy }
+      nats-server: { condition: service_healthy }
+
+  drivers-ms:
+    <<: *app
+    build:
+      {
+        context: ..,
+        dockerfile: deploy/Dockerfile,
+        args: { SERVICE: drivers-ms },
+      }
+    environment:
+      <<: *environment
+      PORT: 5000
+      HEALTH_PORT: 9103
+      DATABASE_URL: postgresql://fuelops:${POSTGRES_PASSWORD}@postgres:5432/driversdb?schema=public
+    depends_on:
+      postgres: { condition: service_healthy }
+      nats-server: { condition: service_healthy }
+
+  vehicles-ms:
+    <<: *app
+    build:
+      {
+        context: ..,
+        dockerfile: deploy/Dockerfile,
+        args: { SERVICE: vehicles-ms },
+      }
+    environment:
+      <<: *environment
+      PORT: 5001
+      HEALTH_PORT: 9104
+      DATABASE_URL: postgresql://fuelops:${POSTGRES_PASSWORD}@postgres:5432/vehiclesdb?schema=public
+    depends_on:
+      postgres: { condition: service_healthy }
+      nats-server: { condition: service_healthy }
+
+  routes-ms:
+    <<: *app
+    build:
+      {
+        context: ..,
+        dockerfile: deploy/Dockerfile,
+        args: { SERVICE: routes-ms },
+      }
+    environment:
+      <<: *environment
+      PORT: 5003
+      HEALTH_PORT: 9105
+      DATABASE_URL: postgresql://fuelops:${POSTGRES_PASSWORD}@postgres:5432/routesdb?schema=public
+    depends_on:
+      postgres: { condition: service_healthy }
+      nats-server: { condition: service_healthy }
+
+  fuel-ms:
+    <<: *app
+    build:
+      { context: .., dockerfile: deploy/Dockerfile, args: { SERVICE: fuel-ms } }
+    environment:
+      <<: *environment
+      PORT: 5004
+      HEALTH_PORT: 9106
+      DATABASE_URL: mongodb://fuelops:${MONGO_PASSWORD}@mongo:27017/fueldb?authSource=admin&replicaSet=rs0
+      FUEL_ANOMALY_THRESHOLD: 30
+    depends_on:
+      mongo-init: { condition: service_completed_successfully }
+      nats-server: { condition: service_healthy }
+
+  api-gateway:
+    <<: *app
+    build:
+      {
+        context: ..,
+        dockerfile: deploy/Dockerfile,
+        args: { SERVICE: api-gateway },
+      }
+    environment:
+      <<: *environment
+      PORT: 4000
+      HEALTH_PORT: 4000
+      CORS_ORIGINS: https://${DOMAIN:-fuelops.dayle.dev}
+      DEMO_EMAIL: demo@fuelops.dayle.dev
+      DRIVERS_MICROSERVICE_HOST: drivers-ms
+      DRIVERS_MICROSERVICE_PORT: 5000
+      VEHICLES_MICROSERVICE_HOST: vehicles-ms
+      VEHICLES_MICROSERVICE_PORT: 5001
+      AUTH_MICROSERVICE_HOST: auth-ms
+      AUTH_MICROSERVICE_PORT: 5002
+      ROUTES_MICROSERVICE_HOST: routes-ms
+      ROUTES_MICROSERVICE_PORT: 5003
+      FUEL_MICROSERVICE_HOST: fuel-ms
+      FUEL_MICROSERVICE_PORT: 5004
+    healthcheck:
+      <<: *health
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:4000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+    depends_on:
+      auth-ms: { condition: service_healthy }
+      drivers-ms: { condition: service_healthy }
+      vehicles-ms: { condition: service_healthy }
+      routes-ms: { condition: service_healthy }
+      fuel-ms: { condition: service_healthy }
+
+  frontend:
+    <<: *app
+    build:
+      context: ../../Frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_DEMO_DATA_DATE: ${DEMO_DATA_DATE:-2026-11-25}
+    networks: [backend]
+    ports: ["127.0.0.1:3080:3000"]
+    healthcheck:
+      <<: *health
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+    depends_on:
+      api-gateway: { condition: service_healthy }
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    profiles: [public]
+    networks: [backend]
+    command: [tunnel, --no-autoupdate, run]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      frontend: { condition: service_healthy }
+
+networks:
+  backend:
+
+volumes:
+  postgres-data:
+  mongo-data:

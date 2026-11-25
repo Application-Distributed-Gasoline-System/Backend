@@ -5,9 +5,11 @@ import { CreateFuelDto, FuelSource } from './dto/create-fuel.dto';
 @Injectable()
 export class FuelService {
   private readonly logger = new Logger(FuelService.name);
-  private readonly ANOMALY_THRESHOLD_PERCENT = Number(process.env.FUEL_ANOMALY_THRESHOLD ?? 30);
+  private readonly ANOMALY_THRESHOLD_PERCENT = Number(
+    process.env.FUEL_ANOMALY_THRESHOLD ?? 30,
+  );
 
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
   private toLocalDayRange(dateStr: string) {
     const d = new Date(dateStr);
     const start = new Date(d);
@@ -52,16 +54,20 @@ export class FuelService {
         create: {
           id: vehicleId,
           plate: data.plate,
-          averageConsumption: data.averageConsumption ? Number(data.averageConsumption) : 0,
+          averageConsumption: data.averageConsumption
+            ? Number(data.averageConsumption)
+            : 0,
           engineType: data.engineType,
-          machineryType: data.machineryType
+          machineryType: data.machineryType,
         },
         update: {
           plate: data.plate,
-          averageConsumption: data.averageConsumption ? Number(data.averageConsumption) : 0,
+          averageConsumption: data.averageConsumption
+            ? Number(data.averageConsumption)
+            : 0,
           engineType: data.engineType,
-          machineryType: data.machineryType
-        }
+          machineryType: data.machineryType,
+        },
       });
       this.logger.log(`🚜 VehicleRef sincronizado: ${data.plate}`);
     } catch (error) {
@@ -72,7 +78,9 @@ export class FuelService {
   async deleteVehicleRef(id: number) {
     try {
       const vehicleId = id.toString();
-      const exists = await this.prisma.vehicleRef.findUnique({ where: { id: vehicleId } });
+      const exists = await this.prisma.vehicleRef.findUnique({
+        where: { id: vehicleId },
+      });
       if (exists) {
         await this.prisma.vehicleRef.delete({ where: { id: vehicleId } });
         this.logger.log(`🚜 VehicleRef eliminado: ${id}`);
@@ -85,14 +93,22 @@ export class FuelService {
   async createRecord(dto: CreateFuelDto) {
     // 1. Idempotencia
     if (dto.externalId) {
-      const existing = await this.prisma.fuelRecord.findFirst({ where: { externalId: dto.externalId } });
+      const existing = await this.prisma.fuelRecord.findFirst({
+        where: { externalId: dto.externalId },
+      });
       if (existing) {
-        this.logger.warn(`Registro ya procesado (externalId=${dto.externalId})`);
-        return { record: existing, isAnomaly: false, message: 'Registro duplicado' };
+        this.logger.warn(
+          `Registro ya procesado (externalId=${dto.externalId})`,
+        );
+        return {
+          record: existing,
+          isAnomaly: false,
+          message: 'Registro duplicado',
+        };
       }
     }
     const vehicleRef = await this.prisma.vehicleRef.findUnique({
-      where: { id: dto.vehicleId }
+      where: { id: dto.vehicleId },
     });
 
     const finalFuelType = vehicleRef?.engineType ?? 'diesel';
@@ -101,30 +117,39 @@ export class FuelService {
     let estimatedFuel = dto.estimatedFuelL;
     let distance = dto.distanceKm;
 
-    if (this.normalizeSource(dto.source) === FuelSource.MANUAL && dto.odometer && !estimatedFuel) {
-
+    if (
+      this.normalizeSource(dto.source) === FuelSource.MANUAL &&
+      dto.odometer &&
+      !estimatedFuel
+    ) {
       // Buscamos el último registro que TENGA odómetro
       const lastRecord = await this.prisma.fuelRecord.findFirst({
         where: {
           vehicleId: dto.vehicleId,
-          odometer: { not: null }
+          odometer: { not: null },
         },
-        orderBy: { recordedAt: 'desc' }
+        orderBy: { recordedAt: 'desc' },
       });
 
       const vehicleRef = await this.prisma.vehicleRef.findUnique({
-        where: { id: dto.vehicleId }
+        where: { id: dto.vehicleId },
       });
 
-      if (lastRecord && lastRecord.odometer !== null && vehicleRef && vehicleRef.averageConsumption) {
-
+      if (
+        lastRecord &&
+        lastRecord.odometer !== null &&
+        vehicleRef &&
+        vehicleRef.averageConsumption
+      ) {
         const currentOdo = dto.odometer;
         const previousOdo = lastRecord.odometer;
 
         if (currentOdo > previousOdo) {
           distance = currentOdo - previousOdo;
           estimatedFuel = (distance / 100) * vehicleRef.averageConsumption;
-          this.logger.log(`🤖 Cálculo Automático: ${distance}km recorridos. Estimado: ${estimatedFuel.toFixed(2)}L`);
+          this.logger.log(
+            `🤖 Cálculo Automático: ${distance}km recorridos. Estimado: ${estimatedFuel.toFixed(2)}L`,
+          );
         } else {
           this.logger.warn(`⚠️ Odómetro menor al anterior (${previousOdo}).`);
         }
@@ -151,7 +176,7 @@ export class FuelService {
         distanceKm: distance ?? null,
         deltaPercent: delta,
         recordedAt,
-      }
+      },
     });
 
     let isAnomaly = false;
@@ -166,7 +191,7 @@ export class FuelService {
     return {
       record: created,
       isAnomaly,
-      message: isAnomaly ? anomalyMessage : 'Registro creado correctamente'
+      message: isAnomaly ? anomalyMessage : 'Registro creado correctamente',
     };
   }
 
@@ -182,30 +207,39 @@ export class FuelService {
         const { end } = this.toLocalDayRange(to);
         where.recordedAt.lte = end;
       }
-
     }
 
-    const records = await this.prisma.fuelRecord.findMany({ where, orderBy: { recordedAt: 'desc' } });
+    const records = await this.prisma.fuelRecord.findMany({
+      where,
+      orderBy: { recordedAt: 'desc' },
+    });
 
-    return records.map(r => ({
+    return records.map((r) => ({
       ...r,
       recordedAt: this.toTimestamp(r.recordedAt),
       createdAt: this.toTimestamp(r.createdAt),
       updatedAt: this.toTimestamp(r.updatedAt),
-      isAnomaly: r.deltaPercent !== null && Math.abs(r.deltaPercent) >= this.ANOMALY_THRESHOLD_PERCENT,
-      anomalyInfo: r.deltaPercent !== null
-        ? {
-          deltaPercent: r.deltaPercent,
-          liters: r.liters,
-          estimatedFuelL: r.estimatedFuelL,
-          distanceKm: r.distanceKm,
-        }
-        : null,
+      isAnomaly:
+        r.deltaPercent !== null &&
+        Math.abs(r.deltaPercent) >= this.ANOMALY_THRESHOLD_PERCENT,
+      anomalyInfo:
+        r.deltaPercent !== null
+          ? {
+              deltaPercent: r.deltaPercent,
+              liters: r.liters,
+              estimatedFuelL: r.estimatedFuelL,
+              distanceKm: r.distanceKm,
+            }
+          : null,
     }));
   }
 
-
-  async getReport(data: { from: string; to: string; vehicleIds?: string[]; machineryType?: string }) {
+  async getReport(data: {
+    from: string;
+    to: string;
+    vehicleIds?: string[];
+    machineryType?: string;
+  }) {
     if (!data) return [];
 
     const { from, to, vehicleIds, machineryType } = data;
@@ -213,26 +247,47 @@ export class FuelService {
     const where: any = {};
     if (from || to) {
       where.recordedAt = {};
-      if (from) where.recordedAt.gte = new Date(from);
-      if (to) where.recordedAt.lte = new Date(to);
+      if (from) where.recordedAt.gte = this.toLocalDayRange(from).start;
+      if (to) where.recordedAt.lte = this.toLocalDayRange(to).end;
     }
     if (vehicleIds && vehicleIds.length) where.vehicleId = { in: vehicleIds };
     if (machineryType) where.machineryType = machineryType;
 
     const records = await this.prisma.fuelRecord.findMany({ where });
+    const vehicleRefs = await this.prisma.vehicleRef.findMany({
+      where: {
+        id: { in: [...new Set(records.map((record) => record.vehicleId))] },
+      },
+    });
+    const consumptionByVehicle = new Map(
+      vehicleRefs.map((vehicle) => [vehicle.id, vehicle.averageConsumption]),
+    );
 
     const map = new Map<
       string,
-      { totalLiters: number; totalKm: number; count: number; anomalies: number; anomalyRecords: any[] }
+      {
+        totalLiters: number;
+        totalKm: number;
+        count: number;
+        anomalies: number;
+        anomalyRecords: any[];
+      }
     >();
 
     for (const r of records) {
-      const vehicleRef = await this.prisma.vehicleRef.findUnique({ where: { id: r.vehicleId } });
-      const avgConsumption = vehicleRef?.averageConsumption ?? 1; // fallback si no hay
+      const avgConsumption = consumptionByVehicle.get(r.vehicleId) ?? 1;
 
-      const distanceKm = r.distanceKm ?? (r.estimatedFuelL ? (r.estimatedFuelL / avgConsumption) * 100 : 0);
+      const distanceKm =
+        r.distanceKm ??
+        (r.estimatedFuelL ? (r.estimatedFuelL / avgConsumption) * 100 : 0);
 
-      const v = map.get(r.vehicleId) ?? { totalLiters: 0, totalKm: 0, count: 0, anomalies: 0, anomalyRecords: [] };
+      const v = map.get(r.vehicleId) ?? {
+        totalLiters: 0,
+        totalKm: 0,
+        count: 0,
+        anomalies: 0,
+        anomalyRecords: [],
+      };
 
       v.totalLiters += r.liters ?? 0;
       v.totalKm += distanceKm;
@@ -245,13 +300,17 @@ export class FuelService {
         deltaPercent = ((r.liters - estimatedFuel) / estimatedFuel) * 100;
       }
 
-      if (deltaPercent !== null && Math.abs(deltaPercent) >= this.ANOMALY_THRESHOLD_PERCENT) {
+      if (
+        deltaPercent !== null &&
+        Math.abs(deltaPercent) >= this.ANOMALY_THRESHOLD_PERCENT
+      ) {
         v.anomalies += 1;
         v.anomalyRecords.push({
           recordId: r.id,
           deltaPercent,
           liters: r.liters,
-          estimatedFuelL: r.estimatedFuelL ?? (distanceKm / 100) * avgConsumption,
+          estimatedFuelL:
+            r.estimatedFuelL ?? (distanceKm / 100) * avgConsumption,
           distanceKm,
           recordedAt: r.recordedAt,
         });
@@ -269,7 +328,6 @@ export class FuelService {
       anomalyRecords: agg.anomalyRecords,
     }));
   }
-
 
   async getByDriver(driverId: string, from?: string, to?: string) {
     const where: any = { driverId };
@@ -290,19 +348,20 @@ export class FuelService {
       orderBy: { recordedAt: 'desc' },
     });
 
-    return records.map(r => ({
+    return records.map((r) => ({
       ...r,
-      isAnomaly: r.deltaPercent !== null
-        && Math.abs(r.deltaPercent) >= this.ANOMALY_THRESHOLD_PERCENT,
-      anomalyInfo: r.deltaPercent !== null
-        ? {
-          deltaPercent: r.deltaPercent,
-          liters: r.liters,
-          estimatedFuelL: r.estimatedFuelL,
-          distanceKm: r.distanceKm,
-        }
-        : null,
+      isAnomaly:
+        r.deltaPercent !== null &&
+        Math.abs(r.deltaPercent) >= this.ANOMALY_THRESHOLD_PERCENT,
+      anomalyInfo:
+        r.deltaPercent !== null
+          ? {
+              deltaPercent: r.deltaPercent,
+              liters: r.liters,
+              estimatedFuelL: r.estimatedFuelL,
+              distanceKm: r.distanceKm,
+            }
+          : null,
     }));
   }
-
 }

@@ -1,0 +1,4 @@
+CREATE DATABASE authdb;
+CREATE DATABASE driversdb;
+CREATE DATABASE vehiclesdb;
+CREATE DATABASE routesdb;

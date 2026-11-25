@@ -1,4 +1,13 @@
-import { Controller, Post, Body, HttpCode, Get, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  Get,
+  Patch,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 import { AuthClientService } from './auth-client.provider';
 import { firstValueFrom } from 'rxjs';
 import { Public } from './public.decorator';
@@ -15,7 +24,7 @@ import {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authClient: AuthClientService) { }
+  constructor(private readonly authClient: AuthClientService) {}
 
   // ------------------------------------------
   // 1. CRUD: REGISTRO (CREATE)
@@ -38,18 +47,27 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   async login(@Body() data: LoginDto) {
-    return firstValueFrom(this.authClient.login(data));
+    const response = await firstValueFrom(this.authClient.login(data));
+    if (!response.success || !response.accessToken) {
+      throw new UnauthorizedException('Correo o contraseña incorrectos.');
+    }
+    return response;
   }
 
   // ------------------------------------------
   // 3. REFRESH TOKEN
   // POST /auth/refresh
   // ------------------------------------------
+  @Public()
   @Post('refresh')
   @HttpCode(200)
   async refreshToken(@Body() data: RefreshTokenDto) {
     // Nota: El DTO RefreshTokenDto debe mapear el campo (refreshToken)
-    return firstValueFrom(this.authClient.refreshToken(data));
+    try {
+      return await firstValueFrom(this.authClient.refreshToken(data));
+    } catch (error) {
+      throw new RpcException(error);
+    }
   }
 
   // ------------------------------------------
@@ -88,7 +106,10 @@ export class AuthController {
   @HttpCode(200)
   async setUserActive(@Body() body: SetActiveDto) {
     return firstValueFrom(
-      this.authClient.setUserActiveStatus({ userId: body.userId, active: body.active })
+      this.authClient.setUserActiveStatus({
+        userId: body.userId,
+        active: body.active,
+      }),
     );
   }
   // --- 8.CRUD: TRAER TODOS LOS USUARIOS (READ) ---
@@ -108,5 +129,4 @@ export class AuthController {
     const res = await firstValueFrom(this.authClient.updateUser(body));
     return res;
   }
-
 }

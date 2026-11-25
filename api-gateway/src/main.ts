@@ -11,9 +11,16 @@ async function bootstrap() {
   const logger = new Logger('Main');
 
   const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
 
   app.enableCors({
-    origin: ['https://gasolinesystem.vercel.app', 'http://localhost:3001'],
+    origin: (
+      process.env.CORS_ORIGINS ||
+      'http://localhost:3001,https://gasolinesystem.vercel.app'
+    )
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean),
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
@@ -22,7 +29,7 @@ async function bootstrap() {
       'X-Requested-With',
       'Access-Control-Allow-Origin',
       'Access-Control-Allow-Headers',
-      'Access-Control-Allow-Methods'
+      'Access-Control-Allow-Methods',
     ],
     exposedHeaders: ['Authorization'],
     credentials: true,
@@ -31,10 +38,12 @@ async function bootstrap() {
   });
 
   app.setGlobalPrefix('api', {
-    exclude: [{
-      path: '',
-      method: RequestMethod.GET
-    }]
+    exclude: [
+      {
+        path: '',
+        method: RequestMethod.GET,
+      },
+    ],
   });
 
   app.useGlobalPipes(

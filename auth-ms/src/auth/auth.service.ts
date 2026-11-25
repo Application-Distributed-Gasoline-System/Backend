@@ -24,9 +24,9 @@ export class AuthService {
     private prisma: PrismaService,
     private readonly mailerService: MailerService,
     @Inject('NATS_SERVICE') private natsClient: ClientProxy,
-  ) { }
+  ) {}
 
-  private jwtSecret = envs.jwt_secret || 'supersecret';
+  private jwtSecret = envs.jwt_secret;
   private jwtExpiresIn = Number(envs.jwt_expires_in) || 900;
   private refreshExpiresDays = Number(envs.refres_token_expires_days) || 30;
   private resetTokenExpiresHours = Number(envs.reset_token_expires_hours) || 24;
@@ -41,7 +41,6 @@ export class AuthService {
     if (existing) throw new BadRequestException('Email already in use');
 
     const user = await this.usersService.create(email, password, role, name);
-    console.log(user);
     if (user.role === 'DRIVER') {
       console.log('Emit driver.created', {
         userId: user.id,
@@ -59,7 +58,6 @@ export class AuthService {
         to: user.email,
         name: user.name || '',
         email,
-        password,
       });
       console.log(`Welcome email sent to ${email}`);
     } catch (error) {
@@ -83,9 +81,13 @@ export class AuthService {
 
   async login(email: string, password: string) {
     const user = await this.usersService.findByEmail(email);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user || !user.active)
+      throw new UnauthorizedException('Invalid credentials');
 
-    const ok = await this.usersService.validatePassword(password, user.password);
+    const ok = await this.usersService.validatePassword(
+      password,
+      user.password,
+    );
     if (!ok) throw new UnauthorizedException('Invalid credentials');
 
     const accessToken = this.signPayload({
@@ -106,10 +108,9 @@ export class AuthService {
     let driverId = null;
     if (user.role === 'DRIVER') {
       try {
-        const res = await this.natsClient.send(
-          'driver.find.by.user',
-          { userId: user.id }
-        ).toPromise();
+        const res = await this.natsClient
+          .send('driver.find.by.user', { userId: user.id })
+          .toPromise();
 
         driverId = res?.driverId || null;
       } catch (err) {
@@ -130,24 +131,31 @@ export class AuthService {
       where: { token: refreshToken },
     });
 
-    if (!stored || stored.revoked) {
+    if (
+      !stored ||
+      stored.revoked ||
+      Date.now() - stored.createdAt.getTime() >=
+        this.refreshExpiresDays * 86400000
+    ) {
       throw new UnauthorizedException('Refresh token invalid');
     }
 
     const user = await this.usersService.findById(stored.userId);
-    if (!user) throw new UnauthorizedException('User not found');
-
-    await this.prisma.refreshToken.update({
-      where: { id: stored.id },
-      data: { revoked: true },
-    });
+    if (!user || !user.active)
+      throw new UnauthorizedException('User not found');
 
     const newRefreshTokenStr = uuidv4() + '.' + uuidv4();
-    await this.prisma.refreshToken.create({
-      data: {
-        token: newRefreshTokenStr,
-        userId: user.id,
-      },
+    // Consume the token exactly once, including simultaneous refresh requests.
+    await this.prisma.$transaction(async (tx) => {
+      const consumed = await tx.refreshToken.updateMany({
+        where: { id: stored.id, revoked: false },
+        data: { revoked: true },
+      });
+      if (consumed.count !== 1)
+        throw new UnauthorizedException('Refresh token invalid');
+      await tx.refreshToken.create({
+        data: { token: newRefreshTokenStr, userId: user.id },
+      });
     });
 
     const accessToken = this.signPayload({
@@ -182,17 +190,17 @@ export class AuthService {
     const res = this.verifyToken(token);
     if (!res.valid) return { valid: false };
 
-    const { sub, email, role } = res.decoded as any;
+    const { sub } = res.decoded as any;
 
     const user = await this.usersService.findById(sub);
-    if (!user) return { valid: false };
+    if (!user || !user.active) return { valid: false };
 
     return {
       valid: true,
       user: {
         id: sub,
-        email: email,
-        role: role,
+        email: user.email,
+        role: user.role,
       },
     };
   }
@@ -201,7 +209,12 @@ export class AuthService {
   async requestPasswordReset(email: string) {
     const user = await this.usersService.findByEmail(email);
 
-    if (!user) {
+    if (
+      !user ||
+      !user.active ||
+      user.email === 'demo@fuelops.dayle.dev' ||
+      user.email === process.env.DEMO_EMAIL
+    ) {
       return {
         success: true,
         message: 'If the user exists, a password reset link has been sent.',
@@ -234,7 +247,7 @@ export class AuthService {
     }
 
     // 4. RESPUESTA (Solo devolvemos el token para pruebas, sino es null)
-    const message = 'Password reset link sent to email.';
+    const message = 'If the user exists, a password reset link has been sent.';
 
     return {
       success: true,
@@ -260,14 +273,19 @@ export class AuthService {
     }
 
     const hashed = await bcrypt.hash(newPassword, 10);
-    await this.prisma.user.update({
-      where: { id: record.userId },
-      data: { password: hashed },
-    });
-
-    await this.prisma.passwordResetToken.delete({
-      where: { id: record.id },
-    });
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: record.userId },
+        data: { password: hashed },
+      }),
+      this.prisma.passwordResetToken.deleteMany({
+        where: { userId: record.userId },
+      }),
+      this.prisma.refreshToken.updateMany({
+        where: { userId: record.userId },
+        data: { revoked: true },
+      }),
+    ]);
 
     return { success: true, message: 'Password reset successfully' };
   }
@@ -282,7 +300,10 @@ export class AuthService {
         userId: user.id,
         active: user.active,
       });
-      console.log('Emit driver.status.updated', { userId: user.id, active: user.active });
+      console.log('Emit driver.status.updated', {
+        userId: user.id,
+        active: user.active,
+      });
     }
     return { success: true, userId: user.id, active: user.active };
   }
@@ -374,10 +395,12 @@ export class AuthService {
         userId: user.id,
         name: user.name,
       });
-      console.log('Emit driver.name.updated', { userId: user.id, name: user.name });
+      console.log('Emit driver.name.updated', {
+        userId: user.id,
+        name: user.name,
+      });
     }
 
     return user;
   }
-
 }

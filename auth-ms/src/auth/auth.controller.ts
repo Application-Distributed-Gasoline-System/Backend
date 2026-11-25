@@ -1,4 +1,8 @@
-import { Controller, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { GrpcMethod, RpcException } from '@nestjs/microservices';
 import { status } from '@grpc/grpc-js';
 import { AuthService } from './auth.service';
@@ -7,11 +11,10 @@ import { UserRole } from '@prisma/client';
 
 @Controller()
 export class AuthController {
-  constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService) {}
 
   @GrpcMethod('AuthService', 'Register')
   async register(data: RegisterDto) {
-    console.log('Register data:', data);
     const roleValue = parseInt(data.role, 10);
     const roleMap: Record<number, UserRole> = {
       0: 'DRIVER',
@@ -41,12 +44,12 @@ export class AuthController {
     try {
       const res = await this.authService.login(data.email, data.password);
       return {
-        success: true,            
+        success: true,
         message: 'Login successful',
         accessToken: res.accessToken,
         refreshToken: res.refreshToken,
         expiresIn: res.expiresIn,
-        driverId: res.driverId || null
+        driverId: res.driverId || null,
       };
     } catch (error: any) {
       if (error instanceof UnauthorizedException) {
@@ -62,16 +65,27 @@ export class AuthController {
     }
   }
 
-
   @GrpcMethod('AuthService', 'RefreshToken')
   async refreshToken(data: any) {
-    const { refreshToken } = data;
-    const res = await this.authService.refreshToken(refreshToken);
-    return {
-      accessToken: res.accessToken,
-      refreshToken: res.refreshToken,
-      expiresIn: res.expiresIn,
-    };
+    try {
+      const res = await this.authService.refreshToken(data.refreshToken);
+      return {
+        accessToken: res.accessToken,
+        refreshToken: res.refreshToken,
+        expiresIn: res.expiresIn,
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw new RpcException({
+          code: status.UNAUTHENTICATED,
+          message: error.message,
+        });
+      }
+      throw new RpcException({
+        code: status.INTERNAL,
+        message: 'Could not refresh session',
+      });
+    }
   }
 
   @GrpcMethod('AuthService', 'ValidateToken')
